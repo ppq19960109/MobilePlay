@@ -11,6 +11,6 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         123
-
+        setContentView(R.layout.activity_splash);
     }
 }
