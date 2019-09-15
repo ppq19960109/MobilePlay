@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">MobilePlay</string>
+    <string name="app_splash">正在启动...</string>
+    <string name="app_name">手机影音</string>
 </resources>
