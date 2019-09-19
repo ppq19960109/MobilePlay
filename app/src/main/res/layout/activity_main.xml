@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <include layout="@layout/titlebar"/>
     <FrameLayout
         android:id="@+id/fl_main"
         android:layout_width="match_parent"
@@ -13,7 +14,6 @@
     </FrameLayout>
 
     <RadioGroup
-        android:checkedButton="@id/rb_video"
         android:id="@+id/rg_tag"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -2,14 +2,21 @@ package com.mobileplay.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.RadioGroup;
 
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.mobileplay.R;
-import com.mobileplay.base.Basepager;
+import com.mobileplay.base.BasePager;
+import com.mobileplay.common.CommonUtils;
 import com.mobileplay.pager.AudioPager;
 import com.mobileplay.pager.NetAudioPager;
 import com.mobileplay.pager.NetVideoPager;
@@ -18,21 +25,38 @@ import com.mobileplay.pager.VideoPager;
 import java.util.ArrayList;
 
 public class MainActivity extends FragmentActivity {
-    private FrameLayout fl_main;
+
     private RadioGroup rg_tag;
-    private ArrayList<Basepager> basepagers;
-    private int pos;
+    public ArrayList<BasePager> basePagers = new ArrayList<>();
+    public int pos;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
-        basepagers.add(new VideoPager(this));
-        basepagers.add(new AudioPager(this));
-        basepagers.add(new NetVideoPager(this));
-        basepagers.add(new NetAudioPager(this));
+        initListener();
+        basePagers.add(new VideoPager(this));
+        basePagers.add(new AudioPager(this));
+        basePagers.add(new NetVideoPager(this));
+        basePagers.add(new NetAudioPager(this));
 
+        rg_tag.check(R.id.rb_video);
+    }
+
+    private void setfragment() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fl_main, basePagers.get(pos));
+        fragmentTransaction.commit();
+    }
+
+    private void initView() {
+        CommonUtils.debugContext = this;
+
+        rg_tag = (RadioGroup) findViewById(R.id.rg_tag);
+    }
+    private void initListener() {
         rg_tag.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -53,14 +77,7 @@ public class MainActivity extends FragmentActivity {
                 setfragment();
             }
         });
-    }
 
-    private void setfragment() {
 
-    }
-
-    private void initView() {
-        fl_main = (FrameLayout) findViewById(R.id.fl_main);
-        rg_tag = (RadioGroup) findViewById(R.id.rg_tag);
     }
 }
