@@ -25,9 +25,4 @@ public abstract class BasePager extends Fragment {
     public void initData() {
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return rootView;
-    }
 }

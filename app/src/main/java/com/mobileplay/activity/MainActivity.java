@@ -1,6 +1,9 @@
 package com.mobileplay.activity;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +37,7 @@ public class MainActivity extends FragmentActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        isGrantExternalRW(this,1);
         initView();
         initListener();
         basePagers.add(new VideoPager(this));
@@ -53,7 +57,6 @@ public class MainActivity extends FragmentActivity {
 
     private void initView() {
         CommonUtils.debugContext = this;
-
         rg_tag = (RadioGroup) findViewById(R.id.rg_tag);
     }
     private void initListener() {
@@ -79,5 +82,28 @@ public class MainActivity extends FragmentActivity {
         });
 
 
+    }
+    /**
+     * 解决安卓6.0以上版本不能读取外部存储权限的问题
+     *
+     * @param activity
+     * @param requestCode
+     * @return
+     */
+    public static boolean isGrantExternalRW(Activity activity, int requestCode) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                (activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED ||
+                        activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                                != PackageManager.PERMISSION_GRANTED)) {
+
+            activity.requestPermissions(new String[]{
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+            }, requestCode);
+
+            return false;
+        }
+        return true;
     }
 }
