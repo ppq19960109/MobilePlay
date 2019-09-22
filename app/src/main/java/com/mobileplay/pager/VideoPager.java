@@ -3,17 +3,20 @@ package com.mobileplay.pager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -22,8 +25,11 @@ import com.mobileplay.R;
 import com.mobileplay.base.BasePager;
 import com.mobileplay.doamain.MediaItem;
 
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,6 +39,7 @@ public class VideoPager extends BasePager {
     private ListView listview;
     private TextView tv_nomedia;
     private ProgressBar pb_load;
+    private VideoAdapter videoAdapter;
     private ArrayList<MediaItem> mediaItems = new ArrayList<>();
     private Handler handler = new Handler() {
         @Override
@@ -40,16 +47,10 @@ public class VideoPager extends BasePager {
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1:
-                    if(mediaItems!=null&&mediaItems.size()>0){
-
-                        List<String> listdata = new ArrayList<String>();
-                        listdata.add("上海");
-                        listdata.add("北京");
-                        listdata.add("天津");
-                        listdata.add(mediaItems.get(0).getName());
-                        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getContext(),android.R.layout.simple_list_item_1,listdata);//listdata和str均可
-                        listview.setAdapter(arrayAdapter);
-                    }else {
+                    if (mediaItems != null && mediaItems.size() > 0) {
+                        videoAdapter = new VideoAdapter();
+                        listview.setAdapter(videoAdapter);
+                    } else {
                         tv_nomedia.setVisibility(View.VISIBLE);
                     }
                     pb_load.setVisibility(View.GONE);
@@ -127,11 +128,12 @@ public class VideoPager extends BasePager {
         pb_load = view.findViewById(R.id.pb_load);
         initData();
     }
-    class VideoAdapter extends BaseAdapter{
+
+    class VideoAdapter extends BaseAdapter {
 
         @Override
         public int getCount() {
-            return 0;
+            return mediaItems.size();
         }
 
         @Override
@@ -146,7 +148,33 @@ public class VideoPager extends BasePager {
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            return null;
+            VideoHolder videoHolder;
+            if (convertView == null) {
+                convertView = View.inflate(getContext(), R.layout.adapt_video_pager, null);
+                videoHolder = new VideoHolder();
+                videoHolder.iv_icon = convertView.findViewById(R.id.iv_icon);
+                videoHolder.tv_name = convertView.findViewById(R.id.tv_name);
+                videoHolder.tv_time = convertView.findViewById(R.id.tv_time);
+                videoHolder.tv_size = convertView.findViewById(R.id.tv_size);
+                convertView.setTag(videoHolder);
+            } else {
+                videoHolder = (VideoHolder) convertView.getTag();
+            }
+            MediaItem mediaItem = mediaItems.get(position);
+            videoHolder.tv_name.setText(mediaItem.getName());
+            videoHolder.tv_size.setText(Formatter.formatFileSize(getContext(), mediaItem.getSize()));
+
+            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+            formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+            videoHolder.tv_time.setText(formatter.format(mediaItem.getDuration()));
+            return convertView;
         }
+    }
+
+    static class VideoHolder {
+        ImageView iv_icon;
+        TextView tv_name;
+        TextView tv_time;
+        TextView tv_size;
     }
 }
