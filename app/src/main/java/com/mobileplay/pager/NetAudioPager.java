@@ -8,7 +8,9 @@ import android.widget.TextView;
 import com.mobileplay.base.BasePager;
 
 public class NetAudioPager extends BasePager {
+    public NetAudioPager() {
 
+    }
     public NetAudioPager(Context context) {
         super(context);
         initData();

@@ -2,6 +2,8 @@ package com.mobileplay.pager;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.res.Configuration;
 import android.database.Cursor;
 
 import android.net.Uri;
@@ -14,6 +16,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
@@ -22,7 +25,10 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.mobileplay.R;
+import com.mobileplay.activity.SystemVideoPlayer;
+import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.base.BasePager;
+import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.MediaItem;
 
 
@@ -48,7 +54,7 @@ public class VideoPager extends BasePager {
             switch (msg.what) {
                 case 1:
                     if (mediaItems != null && mediaItems.size() > 0) {
-                        videoAdapter = new VideoAdapter();
+                        videoAdapter = new VideoAdapter(getContext(), mediaItems);
                         listview.setAdapter(videoAdapter);
                     } else {
                         tv_nomedia.setVisibility(View.VISIBLE);
@@ -58,7 +64,9 @@ public class VideoPager extends BasePager {
             }
         }
     };
+    public VideoPager() {
 
+    }
     public VideoPager(Context context) {
         super(context);
     }
@@ -76,12 +84,13 @@ public class VideoPager extends BasePager {
     }
 
     private void getDataFromLocal() {
+        mediaItems.clear();
         new Thread() {
             @Override
             public void run() {
                 super.run();
                 Uri videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-                ContentResolver contentResolver = getContext().getContentResolver();
+                ContentResolver contentResolver =getContext() .getContentResolver();
                 String[] objs = {
                         MediaStore.Video.Media.DISPLAY_NAME,
                         MediaStore.Video.Media.DURATION,
@@ -121,60 +130,44 @@ public class VideoPager extends BasePager {
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        initData();
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         listview = view.findViewById(R.id.listview);
         tv_nomedia = view.findViewById(R.id.tv_nomedia);
         pb_load = view.findViewById(R.id.pb_load);
-        initData();
-    }
 
-    class VideoAdapter extends BaseAdapter {
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                MediaItem item = (MediaItem) parent.getItemAtPosition(position);
+//                CommonUtils.showToastMsg(null,item.getData()+"="+Uri.parse(item.getData()));
+                if (item != null) {
+                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
+                    intent.setData(Uri.parse(item.getData()));
+                    getContext().startActivity(intent);
+                }
 
-        @Override
-        public int getCount() {
-            return mediaItems.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return null;
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return 0;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            VideoHolder videoHolder;
-            if (convertView == null) {
-                convertView = View.inflate(getContext(), R.layout.adapt_video_pager, null);
-                videoHolder = new VideoHolder();
-                videoHolder.iv_icon = convertView.findViewById(R.id.iv_icon);
-                videoHolder.tv_name = convertView.findViewById(R.id.tv_name);
-                videoHolder.tv_time = convertView.findViewById(R.id.tv_time);
-                videoHolder.tv_size = convertView.findViewById(R.id.tv_size);
-                convertView.setTag(videoHolder);
-            } else {
-                videoHolder = (VideoHolder) convertView.getTag();
             }
-            MediaItem mediaItem = mediaItems.get(position);
-            videoHolder.tv_name.setText(mediaItem.getName());
-            videoHolder.tv_size.setText(Formatter.formatFileSize(getContext(), mediaItem.getSize()));
 
-            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-            formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-            videoHolder.tv_time.setText(formatter.format(mediaItem.getDuration()));
-            return convertView;
-        }
+        });
+
     }
 
-    static class VideoHolder {
-        ImageView iv_icon;
-        TextView tv_name;
-        TextView tv_time;
-        TextView tv_size;
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.i("TAG","fragment onConfigurationChanged");
     }
 }

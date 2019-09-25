@@ -3,8 +3,10 @@ package com.mobileplay.activity;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +48,12 @@ public class MainActivity extends FragmentActivity {
         basePagers.add(new NetAudioPager(this));
 
         rg_tag.check(R.id.rb_video);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.i("TAG","Activity onConfigurationChanged");
     }
 
     private void setfragment() {

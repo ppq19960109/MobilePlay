@@ -8,7 +8,9 @@ import android.widget.TextView;
 import com.mobileplay.base.BasePager;
 
 public class NetVideoPager extends BasePager {
+    public NetVideoPager() {
 
+    }
     public NetVideoPager(Context context) {
         super(context);
         initData();

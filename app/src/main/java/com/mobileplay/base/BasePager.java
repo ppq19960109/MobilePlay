@@ -15,6 +15,9 @@ public abstract class BasePager extends Fragment {
     public View rootView;
     public Context context;
 
+    public BasePager() {
+
+    }
     public BasePager(Context context) {
         this.context = context;
         rootView = initView();
