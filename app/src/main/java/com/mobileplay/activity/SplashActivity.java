@@ -21,7 +21,7 @@ public class SplashActivity extends AppCompatActivity {
             public void run() {
                 startMainActivity();
             }
-        }, 1000);
+        }, 500);
     }
 
     @Override

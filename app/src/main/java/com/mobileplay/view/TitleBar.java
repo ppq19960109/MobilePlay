@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import com.mobileplay.R;
 import com.mobileplay.common.CommonUtils;
@@ -13,9 +14,9 @@ import androidx.annotation.Nullable;
 
 public class TitleBar extends LinearLayout implements View.OnClickListener {
     private View tv_search;
-    private View rl_game;
+    private RelativeLayout rl_game;
     private View iv_record;
-
+    private View iv_game;
     public TitleBar(Context context) {
         this(context,null);
     }
@@ -32,11 +33,14 @@ public class TitleBar extends LinearLayout implements View.OnClickListener {
     protected void onFinishInflate() {
         super.onFinishInflate();
         tv_search=getChildAt(1);
-        rl_game=getChildAt(2);
+        rl_game=(RelativeLayout)getChildAt(2);
+        iv_game= rl_game.getChildAt(0);
+
         iv_record=getChildAt(3);
 
         tv_search.setOnClickListener(this);
         rl_game.setOnClickListener(this);
+//        iv_game.setOnClickListener(this);
         iv_record.setOnClickListener(this);
 
     }
@@ -49,6 +53,9 @@ public class TitleBar extends LinearLayout implements View.OnClickListener {
                 break;
             case R.id.rl_game:
                 CommonUtils.showToastMsg(null,"游戏");
+                break;
+            case R.id.iv_game:
+                CommonUtils.showToastMsg(null,"游戏图片");
                 break;
             case R.id.iv_record:
                 CommonUtils.showToastMsg(null,"历史");

@@ -154,6 +154,9 @@ public class VideoPager extends BasePager {
                 MediaItem item = (MediaItem) parent.getItemAtPosition(position);
 //                CommonUtils.showToastMsg(null,item.getData()+"="+Uri.parse(item.getData()));
                 if (item != null) {
+//                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
+//                    intent.setData(Uri.parse(item.getData()));
+//                    getContext().startActivity(intent);/
                     Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
                     intent.setData(Uri.parse(item.getData()));
                     getContext().startActivity(intent);
