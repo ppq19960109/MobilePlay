@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
@@ -39,9 +40,12 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private TextView tvCurrentTime;
     private SeekBar sbVideo;
     private TextView tvDuration;
+    private Button btn_next;
+    private Button btn_pre;
     private BatteryChangedReceiver batteryChangedReceiver;
     private ArrayList<MediaItem> mediaItems;
     private int position;
+    private Uri uri;
 
     private Handler handler = new Handler() {
         @Override
@@ -128,9 +132,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         sbVideo.setOnSeekBarChangeListener(this);
         tvDuration = (TextView) findViewById(R.id.tv_duration);
         findViewById(R.id.btn_exit).setOnClickListener(this);
-        findViewById(R.id.btn_pre).setOnClickListener(this);
+        btn_pre = findViewById(R.id.btn_pre);
+        btn_pre.setOnClickListener(this);
         findViewById(R.id.btn_play_start_pause).setOnClickListener(this);
-        findViewById(R.id.btn_next).setOnClickListener(this);
+        btn_next = findViewById(R.id.btn_next);
+        btn_next.setOnClickListener(this);
         findViewById(R.id.btn_full_screen).setOnClickListener(this);
     }
 
@@ -138,8 +144,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     //播放本地视频
     private void initLocalVideo() {
         //设置有进度条可以拖动快进
-        MediaController localMediaController = new MediaController(this);
-        video_view.setMediaController(localMediaController);
+//        MediaController localMediaController = new MediaController(this);
+//        video_view.setMediaController(localMediaController);
 
 
         video_view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -166,22 +172,22 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         video_view.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-
+                playNextVideo();
             }
         });
         mediaItems = (ArrayList<MediaItem>) getIntent().getSerializableExtra("videoadd");
-        if(mediaItems==null) {
-            Uri uri = getIntent().getData();
+        if (mediaItems == null) {
+            uri = getIntent().getData();
             tvName.setText(uri.toString());
             video_view.setVideoURI(uri);
-        }else {
+        } else {
 
             position = getIntent().getIntExtra("position", 0);
             MediaItem mediaItem = mediaItems.get(position);
             tvName.setText(mediaItem.getName());
-            Uri parse = Uri.parse(mediaItem.getData());
-            video_view.setVideoURI(parse);
+            video_view.setVideoPath(mediaItem.getData());
         }
+        setButtonState();
     }
 
 
@@ -196,9 +202,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 break;
             case R.id.btn_exit:
                 //TODO implement
+                finish();
                 break;
             case R.id.btn_pre:
                 //TODO implement
+                playPreVideo();
                 break;
             case R.id.btn_play_start_pause:
                 //TODO implement
@@ -212,12 +220,83 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 break;
             case R.id.btn_next:
                 //TODO implement
+                playNextVideo();
                 break;
             case R.id.btn_full_screen:
                 //TODO implement
                 break;
         }
     }
+
+    private void playPreVideo() {
+        --position;
+
+        MediaItem mediaItem = mediaItems.get(position);
+        tvName.setText(mediaItem.getName());
+        video_view.setVideoPath(mediaItem.getData());
+
+        setButtonState();
+    }
+    private void playNextVideo() {
+        if(position+1<mediaItems.size()) {
+            ++position;
+
+            MediaItem mediaItem = mediaItems.get(position);
+            tvName.setText(mediaItem.getName());
+            video_view.setVideoPath(mediaItem.getData());
+
+            setButtonState();
+        }
+    }
+
+    private void setButtonState() {
+        if (mediaItems != null) {
+            if (1 == mediaItems.size()) {
+                btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+                btn_next.setEnabled(false);
+                btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+                btn_pre.setEnabled(false);
+            } else if (2 == mediaItems.size()) {
+                if (position == 0) {
+                    btn_next.setBackgroundResource(R.drawable.btn_next_selector);
+                    btn_next.setEnabled(true);
+                    btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+                    btn_pre.setEnabled(false);
+                } else {
+                    btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+                    btn_next.setEnabled(false);
+                    btn_pre.setBackgroundResource(R.drawable.btn_pre_selector);
+                    btn_pre.setEnabled(true);
+                }
+            } else {
+                if (position == 0) {
+                    btn_next.setBackgroundResource(R.drawable.btn_next_selector);
+                    btn_next.setEnabled(true);
+                    btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+                    btn_pre.setEnabled(false);
+                } else if (position + 1 == mediaItems.size()) {
+                    btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+                    btn_next.setEnabled(false);
+                    btn_pre.setBackgroundResource(R.drawable.btn_pre_selector);
+                    btn_pre.setEnabled(true);
+                } else {
+                    btn_next.setBackgroundResource(R.drawable.btn_next_selector);
+                    btn_next.setEnabled(true);
+                    btn_pre.setBackgroundResource(R.drawable.btn_pre_selector);
+                    btn_pre.setEnabled(true);
+                }
+            }
+
+        } else if (uri != null) {
+            btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+            btn_next.setEnabled(false);
+            btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+            btn_pre.setEnabled(false);
+        } else {
+
+        }
+    }
+
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
