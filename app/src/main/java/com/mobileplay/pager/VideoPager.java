@@ -139,15 +139,6 @@ public class VideoPager extends BasePager {
     public void onStart() {
         super.onStart();
         initData();
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        listview = view.findViewById(R.id.listview);
-        tv_nomedia = view.findViewById(R.id.tv_nomedia);
-        pb_load = view.findViewById(R.id.pb_load);
-
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -157,14 +148,27 @@ public class VideoPager extends BasePager {
 //                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
 //                    intent.setData(Uri.parse(item.getData()));
 //                    getContext().startActivity(intent);/
+
                     Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
-                    intent.setData(Uri.parse(item.getData()));
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("videoadd",mediaItems);
+                    intent.putExtras(bundle);
+                    intent.putExtra("position",position);
                     getContext().startActivity(intent);
                 }
 
             }
 
         });
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        listview = view.findViewById(R.id.listview);
+        tv_nomedia = view.findViewById(R.id.tv_nomedia);
+        pb_load = view.findViewById(R.id.pb_load);
+
 
     }
 

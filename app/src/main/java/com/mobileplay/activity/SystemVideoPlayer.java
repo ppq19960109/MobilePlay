@@ -18,16 +18,17 @@ import android.widget.VideoView;
 
 import com.mobileplay.R;
 import com.mobileplay.Receiver.BatteryChangedReceiver;
+import com.mobileplay.doamain.MediaItem;
 
 import androidx.annotation.Nullable;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
 public class SystemVideoPlayer extends Activity implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
     private VideoView video_view;
-    private Uri uri;
     private LinearLayout llTop;
     private TextView tvName;
     private ImageView ivBattery;
@@ -39,12 +40,14 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private SeekBar sbVideo;
     private TextView tvDuration;
     private BatteryChangedReceiver batteryChangedReceiver;
+    private ArrayList<MediaItem> mediaItems;
+    private int position;
 
-    private Handler handler=new Handler(){
+    private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            switch (msg.what){
+            switch (msg.what) {
                 case 1:
                     int currentPosition = video_view.getCurrentPosition();
                     sbVideo.setProgress(currentPosition);
@@ -54,7 +57,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                     tvSystemTime.setText(getSystemtime());
 
                     removeMessages(1);
-                    sendEmptyMessageDelayed(1,1000);
+                    sendEmptyMessageDelayed(1, 1000);
                     break;
             }
         }
@@ -78,33 +81,33 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private void initData() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        batteryChangedReceiver=new BatteryChangedReceiver(this);
-        registerReceiver(batteryChangedReceiver,intentFilter);
+        batteryChangedReceiver = new BatteryChangedReceiver(this);
+        registerReceiver(batteryChangedReceiver, intentFilter);
     }
 
     @Override
     protected void onDestroy() {
         handler.removeMessages(1);
-        if(batteryChangedReceiver!=null) {
+        if (batteryChangedReceiver != null) {
             unregisterReceiver(batteryChangedReceiver);
-            batteryChangedReceiver=null;
+            batteryChangedReceiver = null;
         }
         super.onDestroy();
     }
 
     public void setBattery(int level) {
-        tv_battery.setText(Integer.toString(level)+"%");
-        if(level<=10){
-           ivBattery.setImageResource(R.drawable.ic_battery_10);
-        }else if(level<=20){
+        tv_battery.setText(Integer.toString(level) + "%");
+        if (level <= 10) {
+            ivBattery.setImageResource(R.drawable.ic_battery_10);
+        } else if (level <= 20) {
             ivBattery.setImageResource(R.drawable.ic_battery_20);
-        }else if(level<=40){
+        } else if (level <= 40) {
             ivBattery.setImageResource(R.drawable.ic_battery_40);
-        }else if(level<=60){
+        } else if (level <= 60) {
             ivBattery.setImageResource(R.drawable.ic_battery_60);
-        }else if(level<=80){
+        } else if (level <= 80) {
             ivBattery.setImageResource(R.drawable.ic_battery_80);
-        }else if(level>=100){
+        } else if (level >= 100) {
             ivBattery.setImageResource(R.drawable.ic_battery_100);
         }
     }
@@ -166,7 +169,19 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
             }
         });
-        video_view.setVideoURI(getIntent().getData());
+        mediaItems = (ArrayList<MediaItem>) getIntent().getSerializableExtra("videoadd");
+        if(mediaItems==null) {
+            Uri uri = getIntent().getData();
+            tvName.setText(uri.toString());
+            video_view.setVideoURI(uri);
+        }else {
+
+            position = getIntent().getIntExtra("position", 0);
+            MediaItem mediaItem = mediaItems.get(position);
+            tvName.setText(mediaItem.getName());
+            Uri parse = Uri.parse(mediaItem.getData());
+            video_view.setVideoURI(parse);
+        }
     }
 
 
@@ -187,10 +202,10 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 break;
             case R.id.btn_play_start_pause:
                 //TODO implement
-                if(video_view.isPlaying()){
+                if (video_view.isPlaying()) {
                     video_view.pause();
                     findViewById(R.id.btn_play_start_pause).setBackgroundResource(R.drawable.btn_play_start_selector);
-                }else {
+                } else {
                     video_view.start();
                     findViewById(R.id.btn_play_start_pause).setBackgroundResource(R.drawable.btn_play_pause_selector);
                 }
