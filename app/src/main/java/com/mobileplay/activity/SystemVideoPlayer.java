@@ -1,17 +1,21 @@
 package com.mobileplay.activity;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -50,11 +54,15 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private TextView tvDuration;
     private Button btn_next;
     private Button btn_pre;
+    private Button btn_full_screen;
     private BatteryChangedReceiver batteryChangedReceiver;
     private ArrayList<MediaItem> mediaItems;
     private int position;
     private Uri uri;
     private GestureDetector gestureDetector;
+    private boolean isFullScreen;
+    private int mVideoWidth;
+    private int mVideoHeight;
 
     private Handler handler = new Handler() {
         @Override
@@ -99,42 +107,43 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         batteryChangedReceiver = new BatteryChangedReceiver(this);
         registerReceiver(batteryChangedReceiver, intentFilter);
-        gestureDetector=new GestureDetector(this,new GestureDetector.SimpleOnGestureListener(){
+        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDown(MotionEvent e) {
-                Log.i("TAG","onDown");
+                Log.i("TAG", "onDown");
 //                return true;
                 return super.onDown(e);
             }
 
             @Override
             public boolean onDoubleTap(MotionEvent e) {
-                Log.i("TAG","onDoubleTap");
+                Log.i("TAG", "onDoubleTap");
+                setScreenFullAndDefault();
                 return super.onDoubleTap(e);
             }
 
             @Override
             public void onLongPress(MotionEvent e) {
-                Log.i("TAG","onLongPress");
+                Log.i("TAG", "onLongPress");
                 startAndPause();
                 super.onLongPress(e);
             }
 
             @Override
             public boolean onSingleTapUp(MotionEvent e) {
-                Log.i("TAG","onSingleTapUp");
+                Log.i("TAG", "onSingleTapUp");
                 return super.onSingleTapUp(e);
             }
 
             @Override
             public boolean onSingleTapConfirmed(MotionEvent e) {
-                Log.i("TAG","onSingleTapConfirmed");
-                if(media_controller.isShown()) {
+                Log.i("TAG", "onSingleTapConfirmed");
+                if (media_controller.isShown()) {
                     media_controller.setVisibility(View.GONE);
                     handler.removeMessages(2);
-                }else {
+                } else {
                     media_controller.setVisibility(View.VISIBLE);
-                    handler.sendEmptyMessageDelayed(2,3000);
+                    handler.sendEmptyMessageDelayed(2, 3000);
                 }
                 return super.onSingleTapConfirmed(e);
             }
@@ -217,9 +226,10 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         findViewById(R.id.btn_play_start_pause).setOnClickListener(this);
         btn_next = findViewById(R.id.btn_next);
         btn_next.setOnClickListener(this);
-        findViewById(R.id.btn_full_screen).setOnClickListener(this);
-        media_controller=findViewById(R.id.media_controller);
-        system_videoplay=findViewById(R.id.system_videoplay);
+        btn_full_screen=findViewById(R.id.btn_full_screen);
+        btn_full_screen.setOnClickListener(this);
+        media_controller = findViewById(R.id.media_controller);
+        system_videoplay = findViewById(R.id.system_videoplay);
     }
 
 
@@ -235,6 +245,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
             public void onPrepared(MediaPlayer mp) {
                 video_view.start();
                 media_controller.setVisibility(View.GONE);
+                mVideoHeight=mp.getVideoHeight();
+                mVideoWidth=mp.getVideoWidth();
+                setFullScreen(false);
                 int duration = mp.getDuration();
                 sbVideo.setMax(duration);
                 SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
@@ -300,10 +313,43 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 break;
             case R.id.btn_full_screen:
                 //TODO implement
+                setScreenFullAndDefault();
                 break;
         }
         handler.removeMessages(2);
-        handler.sendEmptyMessageDelayed(2,3000);
+        handler.sendEmptyMessageDelayed(2, 3000);
+    }
+    private void setScreenFullAndDefault() {
+        isFullScreen = !isFullScreen;
+        setFullScreen(isFullScreen);
+    }
+    private void setFullScreen(boolean isFullScreen) {
+
+        if (isFullScreen) {
+            video_view.setVideoSize(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            btn_full_screen.setBackgroundResource(R.drawable.btn_default_screen_selector);
+        } else {
+            DisplayMetrics outMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(outMetrics);
+            int width = outMetrics.widthPixels;
+            int height = outMetrics.heightPixels;
+            // for compatibility, we adjust size based on aspect ratio
+            if ( mVideoWidth * height  < width * mVideoHeight ) {
+                //Log.i("@@@", "image too wide, correcting");
+                width = height * mVideoWidth / mVideoHeight;
+            } else if ( mVideoWidth * height  > width * mVideoHeight ) {
+                //Log.i("@@@", "image too tall, correcting");
+                height = width * mVideoHeight / mVideoWidth;
+            }
+            video_view.setVideoSize(width, height);
+            btn_full_screen.setBackgroundResource(R.drawable.btn_full_screen_selector);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setFullScreen(isFullScreen);
     }
 
     private void startAndPause() {
@@ -325,8 +371,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
         setButtonState();
     }
+
     private void playNextVideo() {
-        if(position+1<mediaItems.size()) {
+        if (position + 1 < mediaItems.size()) {
             ++position;
 
             MediaItem mediaItem = mediaItems.get(position);
@@ -340,18 +387,18 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private void setButtonState() {
         if (mediaItems != null) {
             if (1 == mediaItems.size()) {
-                btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+                btn_next.setBackgroundResource(R.drawable.btn_next_gray);
                 btn_next.setEnabled(false);
-                btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+                btn_pre.setBackgroundResource(R.drawable.btn_pre_gray);
                 btn_pre.setEnabled(false);
             } else if (2 == mediaItems.size()) {
                 if (position == 0) {
                     btn_next.setBackgroundResource(R.drawable.btn_next_selector);
                     btn_next.setEnabled(true);
-                    btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+                    btn_pre.setBackgroundResource(R.drawable.btn_pre_gray);
                     btn_pre.setEnabled(false);
                 } else {
-                    btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+                    btn_next.setBackgroundResource(R.drawable.btn_next_gray);
                     btn_next.setEnabled(false);
                     btn_pre.setBackgroundResource(R.drawable.btn_pre_selector);
                     btn_pre.setEnabled(true);
@@ -360,10 +407,10 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 if (position == 0) {
                     btn_next.setBackgroundResource(R.drawable.btn_next_selector);
                     btn_next.setEnabled(true);
-                    btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+                    btn_pre.setBackgroundResource(R.drawable.btn_pre_gray);
                     btn_pre.setEnabled(false);
                 } else if (position + 1 == mediaItems.size()) {
-                    btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+                    btn_next.setBackgroundResource(R.drawable.btn_next_gray);
                     btn_next.setEnabled(false);
                     btn_pre.setBackgroundResource(R.drawable.btn_pre_selector);
                     btn_pre.setEnabled(true);
@@ -405,6 +452,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-        handler.sendEmptyMessageDelayed(2,3000);
+        handler.sendEmptyMessageDelayed(2, 3000);
     }
 }
