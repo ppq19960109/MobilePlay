@@ -8,18 +8,24 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.VideoView;
+
 
 import com.mobileplay.R;
 import com.mobileplay.Receiver.BatteryChangedReceiver;
+import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.MediaItem;
+import com.mobileplay.view.VideoView;
 
 import androidx.annotation.Nullable;
 
@@ -37,6 +43,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private TextView tvSystemTime;
     private SeekBar sbVoice;
     private LinearLayout llBottom;
+    private RelativeLayout media_controller;
+    private RelativeLayout system_videoplay;
     private TextView tvCurrentTime;
     private SeekBar sbVideo;
     private TextView tvDuration;
@@ -46,6 +54,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private ArrayList<MediaItem> mediaItems;
     private int position;
     private Uri uri;
+    private GestureDetector gestureDetector;
 
     private Handler handler = new Handler() {
         @Override
@@ -62,6 +71,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
                     removeMessages(1);
                     sendEmptyMessageDelayed(1, 1000);
+                    break;
+                case 2:
+                    media_controller.setVisibility(View.GONE);
                     break;
             }
         }
@@ -87,6 +99,74 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         batteryChangedReceiver = new BatteryChangedReceiver(this);
         registerReceiver(batteryChangedReceiver, intentFilter);
+        gestureDetector=new GestureDetector(this,new GestureDetector.SimpleOnGestureListener(){
+            @Override
+            public boolean onDown(MotionEvent e) {
+                Log.i("TAG","onDown");
+//                return true;
+                return super.onDown(e);
+            }
+
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                Log.i("TAG","onDoubleTap");
+                return super.onDoubleTap(e);
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+                Log.i("TAG","onLongPress");
+                startAndPause();
+                super.onLongPress(e);
+            }
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                Log.i("TAG","onSingleTapUp");
+                return super.onSingleTapUp(e);
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                Log.i("TAG","onSingleTapConfirmed");
+                if(media_controller.isShown()) {
+                    media_controller.setVisibility(View.GONE);
+                    handler.removeMessages(2);
+                }else {
+                    media_controller.setVisibility(View.VISIBLE);
+                    handler.sendEmptyMessageDelayed(2,3000);
+                }
+                return super.onSingleTapConfirmed(e);
+            }
+        });
+
+//        video_view.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                Log.i("TAG","video_view");
+//                return false;
+//            }
+//        });
+//        media_controller.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                Log.i("TAG","media_controller");
+//                return false;
+//            }
+//        });
+//        system_videoplay.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                Log.i("TAG","system_videoplay");
+//                return false;
+//            }
+//        });
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        gestureDetector.onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 
     @Override
@@ -138,6 +218,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         btn_next = findViewById(R.id.btn_next);
         btn_next.setOnClickListener(this);
         findViewById(R.id.btn_full_screen).setOnClickListener(this);
+        media_controller=findViewById(R.id.media_controller);
+        system_videoplay=findViewById(R.id.system_videoplay);
     }
 
 
@@ -152,13 +234,13 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
             @Override
             public void onPrepared(MediaPlayer mp) {
                 video_view.start();
+                media_controller.setVisibility(View.GONE);
                 int duration = mp.getDuration();
                 sbVideo.setMax(duration);
                 SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
                 formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
                 tvDuration.setText(formatter.format(duration));
                 handler.sendEmptyMessage(1);
-
             }
         });
 
@@ -210,13 +292,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 break;
             case R.id.btn_play_start_pause:
                 //TODO implement
-                if (video_view.isPlaying()) {
-                    video_view.pause();
-                    findViewById(R.id.btn_play_start_pause).setBackgroundResource(R.drawable.btn_play_start_selector);
-                } else {
-                    video_view.start();
-                    findViewById(R.id.btn_play_start_pause).setBackgroundResource(R.drawable.btn_play_pause_selector);
-                }
+                startAndPause();
                 break;
             case R.id.btn_next:
                 //TODO implement
@@ -225,6 +301,18 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
             case R.id.btn_full_screen:
                 //TODO implement
                 break;
+        }
+        handler.removeMessages(2);
+        handler.sendEmptyMessageDelayed(2,3000);
+    }
+
+    private void startAndPause() {
+        if (video_view.isPlaying()) {
+            video_view.pause();
+            findViewById(R.id.btn_play_start_pause).setBackgroundResource(R.drawable.btn_play_start_selector);
+        } else {
+            video_view.start();
+            findViewById(R.id.btn_play_start_pause).setBackgroundResource(R.drawable.btn_play_pause_selector);
         }
     }
 
@@ -312,11 +400,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-
+        handler.removeMessages(2);
     }
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-
+        handler.sendEmptyMessageDelayed(2,3000);
     }
 }
