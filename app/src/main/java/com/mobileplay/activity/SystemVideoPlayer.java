@@ -2,9 +2,11 @@ package com.mobileplay.activity;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,6 +15,7 @@ import android.os.Message;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,12 +36,15 @@ import com.mobileplay.view.VideoView;
 
 import androidx.annotation.Nullable;
 
+import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
-public class SystemVideoPlayer extends Activity implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+public class SystemVideoPlayer extends Activity implements View.OnClickListener {
     private VideoView video_view;
     private LinearLayout llTop;
     private TextView tvName;
@@ -55,42 +61,76 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private Button btn_next;
     private Button btn_pre;
     private Button btn_full_screen;
+
     private BatteryChangedReceiver batteryChangedReceiver;
+
     private ArrayList<MediaItem> mediaItems;
     private int position;
     private Uri uri;
+
     private GestureDetector gestureDetector;
+
     private boolean isFullScreen;
     private int mVideoWidth;
     private int mVideoHeight;
 
-    private Handler handler = new Handler() {
+    private AudioManager audioManager;
+    private int streamMaxVolume;
+    private int currentVolume;
+    private boolean isMute;
+
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+
+    private int firstScroll;
+    private int scrollFlag;
+    private int screenWidth;
+    private int screenHeight;
+
+
+    private static class MyHandler extends Handler {
+        private WeakReference<Activity> mWeakReference;
+
+        public MyHandler(Activity activity) {
+            mWeakReference = new WeakReference<>(activity);
+        }
+
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            SystemVideoPlayer mActivity = (SystemVideoPlayer) mWeakReference.get();
             switch (msg.what) {
                 case 1:
-                    int currentPosition = video_view.getCurrentPosition();
-                    sbVideo.setProgress(currentPosition);
-                    SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-                    formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    tvCurrentTime.setText(formatter.format(currentPosition));
-                    tvSystemTime.setText(getSystemtime());
+                    int currentPosition = mActivity.video_view.getCurrentPosition();
+                    mActivity.sbVideo.setProgress(currentPosition);
+
+                    mActivity.simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                    mActivity.tvCurrentTime.setText(mActivity.simpleDateFormat.format(currentPosition));
+
+                    mActivity.tvSystemTime.setText(mActivity.getSystemtime());
 
                     removeMessages(1);
                     sendEmptyMessageDelayed(1, 1000);
                     break;
                 case 2:
-                    media_controller.setVisibility(View.GONE);
+                    mActivity.setMediaControllerVisibility(false);
                     break;
             }
         }
-    };
+    }
+
+    private Handler handler = new MyHandler(this);
+
 
     private String getSystemtime() {
-        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-//        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-        return formatter.format(new Date());
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+        return simpleDateFormat.format(new Date());
+    }
+
+    private void getScreenSize() {
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(outMetrics);
+        screenWidth = outMetrics.widthPixels;
+        screenHeight = outMetrics.heightPixels;
     }
 
     @Override
@@ -102,17 +142,190 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         initLocalVideo();
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()){
+            case MotionEvent.ACTION_UP:
+                Log.i("TAG", "ACTION_UP");
+                if(firstScroll==2) {
+                    firstScroll=0;
+                    currentVolume = sbVoice.getProgress();
+                    setMediaControllerVisibility(false);
+                }
+                break;
+        }
+        gestureDetector.onTouchEvent(event);
+        return super.onTouchEvent(event);
+    }
+
+    @Override
+    protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        if (batteryChangedReceiver != null) {
+            unregisterReceiver(batteryChangedReceiver);
+            batteryChangedReceiver = null;
+        }
+
+        super.onDestroy();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setFullScreen(isFullScreen);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode==KeyEvent.KEYCODE_VOLUME_DOWN){
+            if(currentVolume>0){
+                updataVoice(--currentVolume ,false);
+            }
+            HandlerMediaControllerShowAndHide(4);
+            return true;
+        }else if(keyCode==KeyEvent.KEYCODE_VOLUME_UP){
+            if(currentVolume<streamMaxVolume){
+                updataVoice(++currentVolume ,false);
+            }
+            HandlerMediaControllerShowAndHide(4);
+            return true;
+        }else if(keyCode==KeyEvent.KEYCODE_VOLUME_MUTE){
+
+        }else {
+
+        }
+
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private void initView() {
+        video_view = (VideoView) findViewById(R.id.video_view);
+        llTop = (LinearLayout) findViewById(R.id.ll_top);
+        tvName = (TextView) findViewById(R.id.tv_name);
+        ivBattery = (ImageView) findViewById(R.id.iv_battery);
+        tv_battery = (TextView) findViewById(R.id.tv_battery);
+        tvSystemTime = (TextView) findViewById(R.id.tv_system_time);
+        sbVoice = (SeekBar) findViewById(R.id.sb_voice);
+        llBottom = (LinearLayout) findViewById(R.id.ll_bottom);
+        tvCurrentTime = (TextView) findViewById(R.id.tv_current_time);
+        sbVideo = (SeekBar) findViewById(R.id.sb_video);
+        tvDuration = (TextView) findViewById(R.id.tv_duration);
+        btn_pre = findViewById(R.id.btn_pre);
+        btn_next = findViewById(R.id.btn_next);
+        btn_full_screen = findViewById(R.id.btn_full_screen);
+        media_controller = findViewById(R.id.media_controller);
+        system_videoplay = findViewById(R.id.system_videoplay);
+        initListener();
+    }
+
+    private void initListener() {
+        findViewById(R.id.btn_voice).setOnClickListener(this);
+        findViewById(R.id.btn_switch).setOnClickListener(this);
+        sbVideo.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                //fromUser是否为手动调节，是则true，否则false
+                if (fromUser) {
+                    //若为手动调节则执行下面方法
+                    video_view.seekTo(progress);
+                }
+                //若不加判定则是否手动调节都会执行下面的方法
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                HandlerMediaControllerShowAndHide(2);
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                HandlerMediaControllerShowAndHide(1);
+            }
+        });
+        findViewById(R.id.btn_exit).setOnClickListener(this);
+        findViewById(R.id.btn_play_start_pause).setOnClickListener(this);
+        btn_pre.setOnClickListener(this);
+        btn_next.setOnClickListener(this);
+        btn_full_screen.setOnClickListener(this);
+    }
+
     private void initData() {
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        batteryChangedReceiver = new BatteryChangedReceiver(this);
-        registerReceiver(batteryChangedReceiver, intentFilter);
+        getScreenSize();
+        registerBatteryReceiver();
+        setGestureDetector();
+        setAudio();
+    }
+
+    private void setGestureDetector() {
         gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDown(MotionEvent e) {
                 Log.i("TAG", "onDown");
+                firstScroll = 1;
+
 //                return true;
                 return super.onDown(e);
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                Log.i("TAG","onFling");
+
+                return super.onFling(e1, e2, velocityX, velocityY);
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                float mOldX = e1.getX(), mOldY = e1.getY();
+                float x = e2.getRawX(), y = e2.getRawY();
+                Log.i("TAG","onScroll");
+//                Log.i("TAG","OldX:"+mOldX);
+//                Log.i("TAG","OldY:"+mOldY);
+//                Log.i("TAG","X:"+distanceX);
+//                Log.i("TAG","Y:"+distanceY);
+                if (firstScroll==1) {
+                    HandlerMediaControllerShowAndHide(3);
+                    if (Math.abs(distanceX) > Math.abs(distanceY)) {
+                        scrollFlag = 1;
+                    } else {
+                        if (mOldX > screenWidth / 2) {
+                            scrollFlag = 2;
+                        } else {
+                            scrollFlag = 3;
+                        }
+                    }
+                }
+                firstScroll = 2;
+                switch (scrollFlag) {
+                    case 1:
+
+                        break;
+                    case 2:
+                        if (Math.abs(distanceY) > Math.abs(distanceX)) {
+//                            if(distanceY>1){
+//                                if(currentVolume<streamMaxVolume) {
+//                                    ++currentVolume;
+//                                }
+//                            }else if(Math.abs(distanceY)>1){
+//                                if(currentVolume>0) {
+//                                    --currentVolume;
+//                                }
+//                            }
+
+                            int volume=(int)(streamMaxVolume*(mOldY-y)/screenHeight);
+
+                            updataVoice(Math.min(Math.max(0,currentVolume+volume),streamMaxVolume),false);
+                        }
+                        break;
+                    case 3:
+
+                        break;
+                    default:
+                        break;
+                }
+                return super.onScroll(e1, e2, distanceX, distanceY);
             }
 
             @Override
@@ -130,39 +343,18 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
             }
 
             @Override
-            public boolean onSingleTapUp(MotionEvent e) {
-                Log.i("TAG", "onSingleTapUp");
-                return super.onSingleTapUp(e);
-            }
-
-            @Override
             public boolean onSingleTapConfirmed(MotionEvent e) {
                 Log.i("TAG", "onSingleTapConfirmed");
                 if (media_controller.isShown()) {
-                    media_controller.setVisibility(View.GONE);
-                    handler.removeMessages(2);
+                    setMediaControllerVisibility(false);
+                    HandlerMediaControllerShowAndHide(2);
                 } else {
-                    media_controller.setVisibility(View.VISIBLE);
-                    handler.sendEmptyMessageDelayed(2, 3000);
+                    setMediaControllerVisibility(true);
+                    HandlerMediaControllerShowAndHide(1);
                 }
                 return super.onSingleTapConfirmed(e);
             }
         });
-
-//        video_view.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                Log.i("TAG","video_view");
-//                return false;
-//            }
-//        });
-//        media_controller.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                Log.i("TAG","media_controller");
-//                return false;
-//            }
-//        });
 //        system_videoplay.setOnTouchListener(new View.OnTouchListener() {
 //            @Override
 //            public boolean onTouch(View v, MotionEvent event) {
@@ -172,24 +364,23 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 //        });
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        gestureDetector.onTouchEvent(event);
-        return super.onTouchEvent(event);
+    private void setMediaControllerVisibility(boolean isShow) {
+        if (isShow) {
+            media_controller.setVisibility(View.VISIBLE);
+        } else {
+            media_controller.setVisibility(View.GONE);
+        }
     }
 
-    @Override
-    protected void onDestroy() {
-        handler.removeMessages(1);
-        if (batteryChangedReceiver != null) {
-            unregisterReceiver(batteryChangedReceiver);
-            batteryChangedReceiver = null;
-        }
-        super.onDestroy();
+    private void registerBatteryReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        batteryChangedReceiver = new BatteryChangedReceiver(this);
+        registerReceiver(batteryChangedReceiver, intentFilter);
     }
 
     public void setBattery(int level) {
-        tv_battery.setText(Integer.toString(level) + "%");
+        tv_battery.setText(level + "%");
         if (level <= 10) {
             ivBattery.setImageResource(R.drawable.ic_battery_10);
         } else if (level <= 20) {
@@ -205,33 +396,38 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         }
     }
 
-    private void initView() {
-        video_view = (VideoView) findViewById(R.id.video_view);
-        llTop = (LinearLayout) findViewById(R.id.ll_top);
-        tvName = (TextView) findViewById(R.id.tv_name);
-        ivBattery = (ImageView) findViewById(R.id.iv_battery);
-        tv_battery = (TextView) findViewById(R.id.tv_battery);
-        tvSystemTime = (TextView) findViewById(R.id.tv_system_time);
-        findViewById(R.id.btn_voice).setOnClickListener(this);
-        sbVoice = (SeekBar) findViewById(R.id.sb_voice);
-        findViewById(R.id.btn_switch).setOnClickListener(this);
-        llBottom = (LinearLayout) findViewById(R.id.ll_bottom);
-        tvCurrentTime = (TextView) findViewById(R.id.tv_current_time);
-        sbVideo = (SeekBar) findViewById(R.id.sb_video);
-        sbVideo.setOnSeekBarChangeListener(this);
-        tvDuration = (TextView) findViewById(R.id.tv_duration);
-        findViewById(R.id.btn_exit).setOnClickListener(this);
-        btn_pre = findViewById(R.id.btn_pre);
-        btn_pre.setOnClickListener(this);
-        findViewById(R.id.btn_play_start_pause).setOnClickListener(this);
-        btn_next = findViewById(R.id.btn_next);
-        btn_next.setOnClickListener(this);
-        btn_full_screen=findViewById(R.id.btn_full_screen);
-        btn_full_screen.setOnClickListener(this);
-        media_controller = findViewById(R.id.media_controller);
-        system_videoplay = findViewById(R.id.system_videoplay);
-    }
+    private void setAudio() {
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        streamMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
+        sbVoice.setMax(streamMaxVolume);
+        sbVoice.setProgress(currentVolume);
+        sbVoice.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    //若为手动调节则执行下面方法
+                    Log.i("TAG", "fromUser");
+                    currentVolume = progress;
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, AudioManager.FLAG_SHOW_UI);
+                } else {
+                    Log.i("TAG", "not fromUser");
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress,0);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                HandlerMediaControllerShowAndHide(2);
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                HandlerMediaControllerShowAndHide(1);
+            }
+        });
+    }
 
     //播放本地视频
     private void initLocalVideo() {
@@ -239,20 +435,23 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 //        MediaController localMediaController = new MediaController(this);
 //        video_view.setMediaController(localMediaController);
 
-
         video_view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
                 video_view.start();
-                media_controller.setVisibility(View.GONE);
-                mVideoHeight=mp.getVideoHeight();
-                mVideoWidth=mp.getVideoWidth();
+
+                mVideoHeight = mp.getVideoHeight();
+                mVideoWidth = mp.getVideoWidth();
                 setFullScreen(false);
+
+                setMediaControllerVisibility(false);
+
                 int duration = mp.getDuration();
                 sbVideo.setMax(duration);
-                SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-                formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-                tvDuration.setText(formatter.format(duration));
+
+                simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                tvDuration.setText(simpleDateFormat.format(duration));
+
                 handler.sendEmptyMessage(1);
             }
         });
@@ -270,18 +469,25 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 playNextVideo();
             }
         });
-        mediaItems = (ArrayList<MediaItem>) getIntent().getSerializableExtra("videoadd");
+
+        Serializable videoList = getIntent().getSerializableExtra("VideoList");
+        if (videoList instanceof ArrayList) {
+            mediaItems = (ArrayList) videoList;
+        }
+//        mediaItems = (ArrayList<MediaItem>) getIntent().getSerializableExtra("VideoList");
         if (mediaItems == null) {
             uri = getIntent().getData();
-            tvName.setText(uri.toString());
-            video_view.setVideoURI(uri);
+            if (uri != null) {
+                tvName.setText(uri.toString());
+                video_view.setVideoURI(uri);
+            }
         } else {
-
             position = getIntent().getIntExtra("position", 0);
             MediaItem mediaItem = mediaItems.get(position);
             tvName.setText(mediaItem.getName());
             video_view.setVideoPath(mediaItem.getData());
         }
+
         setButtonState();
     }
 
@@ -291,6 +497,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         switch (view.getId()) {
             case R.id.btn_voice:
                 //TODO implement
+                isMute = !isMute;
+                updataVoice(currentVolume,isMute);
                 break;
             case R.id.btn_switch:
                 //TODO implement
@@ -316,28 +524,58 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 setScreenFullAndDefault();
                 break;
         }
-        handler.removeMessages(2);
-        handler.sendEmptyMessageDelayed(2, 3000);
+        HandlerMediaControllerShowAndHide(4);
     }
+
+    private void HandlerMediaControllerShowAndHide(int index) {
+        switch (index){
+            case 1:
+                handler.sendEmptyMessageDelayed(2, 4000);
+                break;
+            case 2:
+                handler.removeMessages(2);
+                break;
+            case 3:
+                handler.removeMessages(2);
+                setMediaControllerVisibility(true);
+                break;
+            case 4:
+                handler.removeMessages(2);
+                handler.sendEmptyMessageDelayed(2, 4000);
+                setMediaControllerVisibility(true);
+                break;
+        }
+
+    }
+
+    private void updataVoice(int progress,boolean mute) {
+        if (mute) {
+            sbVoice.setProgress(0);
+        } else {
+            isMute = false;
+            sbVoice.setProgress(progress);
+        }
+    }
+
     private void setScreenFullAndDefault() {
         isFullScreen = !isFullScreen;
         setFullScreen(isFullScreen);
     }
+
     private void setFullScreen(boolean isFullScreen) {
 
         if (isFullScreen) {
             video_view.setVideoSize(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             btn_full_screen.setBackgroundResource(R.drawable.btn_default_screen_selector);
         } else {
-            DisplayMetrics outMetrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(outMetrics);
-            int width = outMetrics.widthPixels;
-            int height = outMetrics.heightPixels;
+            getScreenSize();
+            int width = screenWidth;
+            int height = screenHeight;
             // for compatibility, we adjust size based on aspect ratio
-            if ( mVideoWidth * height  < width * mVideoHeight ) {
+            if (mVideoWidth * height < width * mVideoHeight) {
                 //Log.i("@@@", "image too wide, correcting");
                 width = height * mVideoWidth / mVideoHeight;
-            } else if ( mVideoWidth * height  > width * mVideoHeight ) {
+            } else if (mVideoWidth * height > width * mVideoHeight) {
                 //Log.i("@@@", "image too tall, correcting");
                 height = width * mVideoHeight / mVideoWidth;
             }
@@ -346,11 +584,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         }
     }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        setFullScreen(isFullScreen);
-    }
 
     private void startAndPause() {
         if (video_view.isPlaying()) {
@@ -433,25 +666,4 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     }
 
 
-    @Override
-    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        //fromUser是否为手动调节，是则true，否则false
-        if (fromUser) {
-            //若为手动调节则执行下面方法
-            video_view.seekTo(progress);
-        }
-        //若不加判定则是否手动调节都会执行下面的方法
-
-
-    }
-
-    @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
-        handler.removeMessages(2);
-    }
-
-    @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
-        handler.sendEmptyMessageDelayed(2, 3000);
-    }
 }

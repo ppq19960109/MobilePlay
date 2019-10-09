@@ -151,7 +151,7 @@ public class VideoPager extends BasePager {
 
                     Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable("videoadd",mediaItems);
+                    bundle.putSerializable("VideoList",mediaItems);
                     intent.putExtras(bundle);
                     intent.putExtra("position",position);
                     getContext().startActivity(intent);
