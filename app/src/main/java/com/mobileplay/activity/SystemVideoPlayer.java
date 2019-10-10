@@ -44,6 +44,9 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import io.vov.vitamio.LibsChecker;
+import io.vov.vitamio.Vitamio;
+
 public class SystemVideoPlayer extends Activity implements View.OnClickListener {
     private VideoView video_view;
     private LinearLayout llTop;
@@ -61,6 +64,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private Button btn_next;
     private Button btn_pre;
     private Button btn_full_screen;
+    private Button btn_voice;
 
     private BatteryChangedReceiver batteryChangedReceiver;
 
@@ -75,13 +79,14 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private int mVideoHeight;
 
     private AudioManager audioManager;
-    private int streamMaxVolume;
+    private int maxVolume;
     private int currentVolume;
+    private int scrollCurrentVolume;
     private boolean isMute;
 
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
 
-    private int firstScroll;
+    private boolean firstScroll;
     private int scrollFlag;
     private int screenWidth;
     private int screenHeight;
@@ -121,22 +126,17 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private Handler handler = new MyHandler(this);
 
 
-    private String getSystemtime() {
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT+8"));
-        return simpleDateFormat.format(new Date());
-    }
-
-    private void getScreenSize() {
-        DisplayMetrics outMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(outMetrics);
-        screenWidth = outMetrics.widthPixels;
-        screenHeight = outMetrics.heightPixels;
-    }
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_system_videoplayer);
+//        if (!LibsChecker.checkVitamioLibs(this)) {
+//            return;
+//        }
+//        Log.i("TAG", "Vitamio");
+//        if (Vitamio.isInitialized(this)) {
+//            Log.i("TAG", "Vitamio isInitialized");
+//        }
         initView();
         initData();
         initLocalVideo();
@@ -144,14 +144,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()){
+        switch (event.getAction()) {
             case MotionEvent.ACTION_UP:
                 Log.i("TAG", "ACTION_UP");
-                if(firstScroll==2) {
-                    firstScroll=0;
-                    currentVolume = sbVoice.getProgress();
-                    setMediaControllerVisibility(false);
-                }
                 break;
         }
         gestureDetector.onTouchEvent(event);
@@ -165,33 +160,31 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             unregisterReceiver(batteryChangedReceiver);
             batteryChangedReceiver = null;
         }
-
         super.onDestroy();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        getScreenSize();
         setFullScreen(isFullScreen);
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(keyCode==KeyEvent.KEYCODE_VOLUME_DOWN){
-            if(currentVolume>0){
-                updataVoice(--currentVolume ,false);
-            }
-            HandlerMediaControllerShowAndHide(4);
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            int volume = getCurrentVolume();
+            updataVoice(Math.max(--volume, 0), false);
+            HandlerMediaControllerShowAndHide(3);
             return true;
-        }else if(keyCode==KeyEvent.KEYCODE_VOLUME_UP){
-            if(currentVolume<streamMaxVolume){
-                updataVoice(++currentVolume ,false);
-            }
-            HandlerMediaControllerShowAndHide(4);
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            int volume = getCurrentVolume();
+            updataVoice(Math.min(++volume, maxVolume), false);
+            HandlerMediaControllerShowAndHide(3);
             return true;
-        }else if(keyCode==KeyEvent.KEYCODE_VOLUME_MUTE){
-
-        }else {
+        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+            Log.i("TAG", "KEYCODE_VOLUME_MUTE");
+        } else {
 
         }
 
@@ -213,13 +206,15 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         btn_pre = findViewById(R.id.btn_pre);
         btn_next = findViewById(R.id.btn_next);
         btn_full_screen = findViewById(R.id.btn_full_screen);
+        btn_voice = findViewById(R.id.btn_voice);
+
         media_controller = findViewById(R.id.media_controller);
         system_videoplay = findViewById(R.id.system_videoplay);
         initListener();
     }
 
     private void initListener() {
-        findViewById(R.id.btn_voice).setOnClickListener(this);
+        btn_voice.setOnClickListener(this);
         findViewById(R.id.btn_switch).setOnClickListener(this);
         sbVideo.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
@@ -256,177 +251,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         registerBatteryReceiver();
         setGestureDetector();
         setAudio();
-    }
 
-    private void setGestureDetector() {
-        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onDown(MotionEvent e) {
-                Log.i("TAG", "onDown");
-                firstScroll = 1;
-
-//                return true;
-                return super.onDown(e);
-            }
-
-            @Override
-            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                Log.i("TAG","onFling");
-
-                return super.onFling(e1, e2, velocityX, velocityY);
-            }
-
-            @Override
-            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                float mOldX = e1.getX(), mOldY = e1.getY();
-                float x = e2.getRawX(), y = e2.getRawY();
-                Log.i("TAG","onScroll");
-//                Log.i("TAG","OldX:"+mOldX);
-//                Log.i("TAG","OldY:"+mOldY);
-//                Log.i("TAG","X:"+distanceX);
-//                Log.i("TAG","Y:"+distanceY);
-                if (firstScroll==1) {
-                    HandlerMediaControllerShowAndHide(3);
-                    if (Math.abs(distanceX) > Math.abs(distanceY)) {
-                        scrollFlag = 1;
-                    } else {
-                        if (mOldX > screenWidth / 2) {
-                            scrollFlag = 2;
-                        } else {
-                            scrollFlag = 3;
-                        }
-                    }
-                }
-                firstScroll = 2;
-                switch (scrollFlag) {
-                    case 1:
-
-                        break;
-                    case 2:
-                        if (Math.abs(distanceY) > Math.abs(distanceX)) {
-//                            if(distanceY>1){
-//                                if(currentVolume<streamMaxVolume) {
-//                                    ++currentVolume;
-//                                }
-//                            }else if(Math.abs(distanceY)>1){
-//                                if(currentVolume>0) {
-//                                    --currentVolume;
-//                                }
-//                            }
-
-                            int volume=(int)(streamMaxVolume*(mOldY-y)/screenHeight);
-
-                            updataVoice(Math.min(Math.max(0,currentVolume+volume),streamMaxVolume),false);
-                        }
-                        break;
-                    case 3:
-
-                        break;
-                    default:
-                        break;
-                }
-                return super.onScroll(e1, e2, distanceX, distanceY);
-            }
-
-            @Override
-            public boolean onDoubleTap(MotionEvent e) {
-                Log.i("TAG", "onDoubleTap");
-                setScreenFullAndDefault();
-                return super.onDoubleTap(e);
-            }
-
-            @Override
-            public void onLongPress(MotionEvent e) {
-                Log.i("TAG", "onLongPress");
-                startAndPause();
-                super.onLongPress(e);
-            }
-
-            @Override
-            public boolean onSingleTapConfirmed(MotionEvent e) {
-                Log.i("TAG", "onSingleTapConfirmed");
-                if (media_controller.isShown()) {
-                    setMediaControllerVisibility(false);
-                    HandlerMediaControllerShowAndHide(2);
-                } else {
-                    setMediaControllerVisibility(true);
-                    HandlerMediaControllerShowAndHide(1);
-                }
-                return super.onSingleTapConfirmed(e);
-            }
-        });
-//        system_videoplay.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                Log.i("TAG","system_videoplay");
-//                return false;
-//            }
-//        });
-    }
-
-    private void setMediaControllerVisibility(boolean isShow) {
-        if (isShow) {
-            media_controller.setVisibility(View.VISIBLE);
-        } else {
-            media_controller.setVisibility(View.GONE);
-        }
-    }
-
-    private void registerBatteryReceiver() {
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        batteryChangedReceiver = new BatteryChangedReceiver(this);
-        registerReceiver(batteryChangedReceiver, intentFilter);
-    }
-
-    public void setBattery(int level) {
-        tv_battery.setText(level + "%");
-        if (level <= 10) {
-            ivBattery.setImageResource(R.drawable.ic_battery_10);
-        } else if (level <= 20) {
-            ivBattery.setImageResource(R.drawable.ic_battery_20);
-        } else if (level <= 40) {
-            ivBattery.setImageResource(R.drawable.ic_battery_40);
-        } else if (level <= 60) {
-            ivBattery.setImageResource(R.drawable.ic_battery_60);
-        } else if (level <= 80) {
-            ivBattery.setImageResource(R.drawable.ic_battery_80);
-        } else if (level >= 100) {
-            ivBattery.setImageResource(R.drawable.ic_battery_100);
-        }
-    }
-
-    private void setAudio() {
-        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        streamMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-
-        sbVoice.setMax(streamMaxVolume);
-        sbVoice.setProgress(currentVolume);
-        sbVoice.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    //若为手动调节则执行下面方法
-                    Log.i("TAG", "fromUser");
-                    currentVolume = progress;
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, AudioManager.FLAG_SHOW_UI);
-                } else {
-                    Log.i("TAG", "not fromUser");
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress,0);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                HandlerMediaControllerShowAndHide(2);
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                HandlerMediaControllerShowAndHide(1);
-            }
-        });
     }
 
     //播放本地视频
@@ -498,7 +323,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             case R.id.btn_voice:
                 //TODO implement
                 isMute = !isMute;
-                updataVoice(currentVolume,isMute);
+                int mVolume = getCurrentVolume();
+                if (mVolume == 0 && isMute == false) {
+                    mVolume += 1;
+                }
+                updataVoice(mVolume, isMute);
                 break;
             case R.id.btn_switch:
                 //TODO implement
@@ -527,8 +356,127 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         HandlerMediaControllerShowAndHide(4);
     }
 
+    private String getSystemtime() {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+//        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+        return simpleDateFormat.format(new Date());
+    }
+
+    private void getScreenSize() {
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(outMetrics);
+        screenWidth = outMetrics.widthPixels;
+        screenHeight = outMetrics.heightPixels;
+    }
+
+    private void setGestureDetector() {
+        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDown(MotionEvent e) {
+                Log.i("TAG", "onDown");
+                firstScroll = true;
+                return super.onDown(e);
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                Log.i("TAG", "onFling");
+
+                return super.onFling(e1, e2, velocityX, velocityY);
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                float mOldX = e1.getX(), mOldY = e1.getY();
+                float x = e2.getRawX(), y = e2.getRawY();
+                Log.i("TAG", "onScroll");
+//                Log.i("TAG","OldX:"+mOldX);
+//                Log.i("TAG","OldY:"+mOldY);
+//                Log.i("TAG","X:"+distanceX);
+//                Log.i("TAG","Y:"+distanceY);
+                if (firstScroll) {
+                    scrollCurrentVolume = getCurrentVolume();
+                    setMediaControllerVisibility(true);
+
+                    if (Math.abs(distanceX) > Math.abs(distanceY)) {
+                        scrollFlag = 1;
+                    } else {
+                        if (mOldX > screenWidth / 2) {
+                            scrollFlag = 2;
+                        } else {
+                            scrollFlag = 3;
+                        }
+                    }
+                }
+
+                firstScroll = false;
+                HandlerMediaControllerShowAndHide(4);
+
+                switch (scrollFlag) {
+                    case 1:
+
+                        break;
+                    case 2:
+                        if (Math.abs(distanceY) > Math.abs(distanceX)) {
+                            int volume = (int) (maxVolume * (mOldY - y) / screenHeight);
+                            updataVoice(Math.min(Math.max(0, scrollCurrentVolume + volume), maxVolume), false);
+                        }
+                        break;
+                    case 3:
+
+                        break;
+                    default:
+                        break;
+                }
+                return super.onScroll(e1, e2, distanceX, distanceY);
+            }
+
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                Log.i("TAG", "onDoubleTap");
+                setScreenFullAndDefault();
+                return super.onDoubleTap(e);
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+                Log.i("TAG", "onLongPress");
+                startAndPause();
+                super.onLongPress(e);
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                Log.i("TAG", "onSingleTapConfirmed");
+                if (media_controller.isShown()) {
+                    setMediaControllerVisibility(false);
+                    HandlerMediaControllerShowAndHide(2);
+                } else {
+                    setMediaControllerVisibility(true);
+                    HandlerMediaControllerShowAndHide(1);
+                }
+                return super.onSingleTapConfirmed(e);
+            }
+        });
+//        system_videoplay.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                Log.i("TAG","system_videoplay");
+//                return false;
+//            }
+//        });
+    }
+
+    private void setMediaControllerVisibility(boolean isShow) {
+        if (isShow) {
+            media_controller.setVisibility(View.VISIBLE);
+        } else {
+            media_controller.setVisibility(View.GONE);
+        }
+    }
+
     private void HandlerMediaControllerShowAndHide(int index) {
-        switch (index){
+        switch (index) {
             case 1:
                 handler.sendEmptyMessageDelayed(2, 4000);
                 break;
@@ -537,25 +485,107 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                 break;
             case 3:
                 handler.removeMessages(2);
+                handler.sendEmptyMessageDelayed(2, 4000);
                 setMediaControllerVisibility(true);
                 break;
             case 4:
                 handler.removeMessages(2);
                 handler.sendEmptyMessageDelayed(2, 4000);
-                setMediaControllerVisibility(true);
                 break;
         }
-
     }
 
-    private void updataVoice(int progress,boolean mute) {
-        if (mute) {
-            sbVoice.setProgress(0);
-        } else {
-            isMute = false;
-            sbVoice.setProgress(progress);
+    private void registerBatteryReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        batteryChangedReceiver = new BatteryChangedReceiver(this);
+        registerReceiver(batteryChangedReceiver, intentFilter);
+    }
+
+    public void setBattery(int level) {
+        tv_battery.setText(level + "%");
+        if (level <= 10) {
+            ivBattery.setImageResource(R.drawable.ic_battery_10);
+        } else if (level <= 20) {
+            ivBattery.setImageResource(R.drawable.ic_battery_20);
+        } else if (level <= 40) {
+            ivBattery.setImageResource(R.drawable.ic_battery_40);
+        } else if (level <= 60) {
+            ivBattery.setImageResource(R.drawable.ic_battery_60);
+        } else if (level <= 80) {
+            ivBattery.setImageResource(R.drawable.ic_battery_80);
+        } else if (level >= 100) {
+            ivBattery.setImageResource(R.drawable.ic_battery_100);
         }
     }
+
+    private void setAudio() {
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        setCurrentVolume(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
+        setVoice();
+
+        sbVoice.setMax(maxVolume);
+        sbVoice.setProgress(getCurrentVolume());
+
+        sbVoice.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+                if (fromUser) {
+                    //若为手动调节则执行下面方法
+                    Log.i("TAG", "fromUser");
+
+                    updataVoice(progress, false);
+                } else {
+                    Log.i("TAG", "not fromUser");
+
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                HandlerMediaControllerShowAndHide(2);
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                HandlerMediaControllerShowAndHide(1);
+            }
+        });
+    }
+
+    private int getCurrentVolume() {
+        return currentVolume;
+    }
+
+    private void setCurrentVolume(int volume) {
+        currentVolume = volume;
+    }
+
+    private void updataVoice(int progress, boolean mute) {
+        if (mute) {
+            sbVoice.setProgress(0);
+            btn_voice.setBackgroundResource(R.drawable.btn_voice_mute);
+        } else {
+            setCurrentVolume(progress);
+            setVoice();
+            sbVoice.setProgress(progress);
+
+        }
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+    }
+
+    private void setVoice() {
+        if (getCurrentVolume() == 0) {
+            isMute = true;
+            btn_voice.setBackgroundResource(R.drawable.btn_voice_mute);
+        } else {
+            isMute = false;
+            btn_voice.setBackgroundResource(R.drawable.btn_voice_selector);
+        }
+    }
+
 
     private void setScreenFullAndDefault() {
         isFullScreen = !isFullScreen;
@@ -568,7 +598,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             video_view.setVideoSize(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             btn_full_screen.setBackgroundResource(R.drawable.btn_default_screen_selector);
         } else {
-            getScreenSize();
+
             int width = screenWidth;
             int height = screenHeight;
             // for compatibility, we adjust size based on aspect ratio
@@ -583,7 +613,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             btn_full_screen.setBackgroundResource(R.drawable.btn_full_screen_selector);
         }
     }
-
 
     private void startAndPause() {
         if (video_view.isPlaying()) {
