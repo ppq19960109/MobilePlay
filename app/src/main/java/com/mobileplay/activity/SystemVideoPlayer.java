@@ -92,6 +92,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private int screenWidth;
     private int screenHeight;
 
+    private int videoDuration;
+
 
     private static class MyHandler extends Handler {
         private WeakReference<Activity> mWeakReference;
@@ -122,11 +124,18 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                     break;
             }
         }
+
+
     }
 
     private Handler handler = new MyHandler(this);
 
-
+//    private void updataSecondaryProgress() {
+//        int bufferPercentage = video_view.getBufferPercentage();
+//        int percent=sbVideo.getMax()*bufferPercentage/100;
+//        sbVideo.setSecondaryProgress(percent);
+//        Log.i("TAG", "setSecondaryProgress"+bufferPercentage+"="+percent);
+//    }
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -264,6 +273,13 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         video_view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
+                mp.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                    @Override
+                    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                            int secondaryProgress = videoDuration * percent / 100;
+                            sbVideo.setSecondaryProgress(secondaryProgress);
+                    }
+                });
                 video_view.start();
 
                 mVideoHeight = mp.getVideoHeight();
@@ -272,11 +288,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
                 setMediaControllerVisibility(false);
 
-                int duration = mp.getDuration();
-                sbVideo.setMax(duration);
+                 videoDuration = mp.getDuration();
+                sbVideo.setMax(videoDuration);
 
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-                tvDuration.setText(simpleDateFormat.format(duration));
+                tvDuration.setText(simpleDateFormat.format(videoDuration));
 
                 handler.sendEmptyMessage(1);
             }
@@ -319,13 +335,14 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     }
 
     private boolean isNetUri(String uri) {
-        if(uri==null){
+        if (uri == null) {
             return false;
         }
-        if(uri.toLowerCase().startsWith("http")||uri.toLowerCase().startsWith("https")||uri.toLowerCase().startsWith("rtsp")){
-
+        if (uri.toLowerCase().startsWith("http") || uri.toLowerCase().startsWith("https")
+                || uri.toLowerCase().startsWith("rtsp")|| uri.toLowerCase().startsWith("mms")) {
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -696,9 +713,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             }
 
         } else if (uri != null) {
-            btn_next.setBackgroundResource(R.drawable.btn_next_pressed);
+            btn_next.setBackgroundResource(R.drawable.btn_next_gray);
             btn_next.setEnabled(false);
-            btn_pre.setBackgroundResource(R.drawable.btn_pre_pressed);
+            btn_pre.setBackgroundResource(R.drawable.btn_pre_gray);
             btn_pre.setEnabled(false);
         } else {
 
