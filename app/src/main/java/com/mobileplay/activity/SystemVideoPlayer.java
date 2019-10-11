@@ -47,6 +47,7 @@ import java.util.TimeZone;
 import io.vov.vitamio.LibsChecker;
 import io.vov.vitamio.Vitamio;
 
+
 public class SystemVideoPlayer extends Activity implements View.OnClickListener {
     private VideoView video_view;
     private LinearLayout llTop;
@@ -130,13 +131,13 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_system_videoplayer);
-//        if (!LibsChecker.checkVitamioLibs(this)) {
-//            return;
-//        }
-//        Log.i("TAG", "Vitamio");
-//        if (Vitamio.isInitialized(this)) {
-//            Log.i("TAG", "Vitamio isInitialized");
-//        }
+        if (!LibsChecker.checkVitamioLibs(this)) {
+            return;
+        }
+        Log.i("TAG", "Vitamio");
+        if (Vitamio.isInitialized(this)) {
+            Log.i("TAG", "Vitamio isInitialized");
+        }
         initView();
         initData();
         initLocalVideo();
@@ -284,7 +285,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         video_view.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
-                return false;
+                Log.i("TAG", "onError: MediaPlayer");
+                return true;
             }
         });
 
@@ -316,6 +318,15 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         setButtonState();
     }
 
+    private boolean isNetUri(String uri) {
+        if(uri==null){
+            return false;
+        }
+        if(uri.toLowerCase().startsWith("http")||uri.toLowerCase().startsWith("https")||uri.toLowerCase().startsWith("rtsp")){
+
+        }
+        return true;
+    }
 
     @Override
     public void onClick(View view) {
