@@ -1,6 +1,5 @@
 package com.mobileplay.activity;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +8,7 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -22,7 +22,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -30,7 +29,6 @@ import android.widget.TextView;
 
 import com.mobileplay.R;
 import com.mobileplay.Receiver.BatteryChangedReceiver;
-import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.view.VideoView;
 
@@ -94,6 +92,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     private int videoDuration;
 
+    private View ll_buffer;
+    private TextView tv_netspeed;
+    private boolean isUseSystem=false;
+    private int preCurrentPosition;
+    private boolean bufferListenerStart;
 
     private static class MyHandler extends Handler {
         private WeakReference<Activity> mWeakReference;
@@ -116,6 +119,10 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
                     mActivity.tvSystemTime.setText(mActivity.getSystemtime());
 
+                    if(!mActivity.isUseSystem){
+
+                        mActivity.bufferListener(currentPosition);
+                    }
                     removeMessages(1);
                     sendEmptyMessageDelayed(1, 1000);
                     break;
@@ -128,9 +135,27 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     }
 
+    private void bufferListener(int currentPosition) {
+        if(!bufferListenerStart){
+            bufferListenerStart=true;
+            return;
+        }
+        if(video_view.isPlaying()) {
+            int buffer = currentPosition - preCurrentPosition;
+            preCurrentPosition = currentPosition;
+            if (buffer < 500) {
+                ll_buffer.setVisibility(View.VISIBLE);
+            } else {
+                ll_buffer.setVisibility(View.GONE);
+            }
+        }else {
+            ll_buffer.setVisibility(View.GONE);
+        }
+    }
+
     private Handler handler = new MyHandler(this);
 
-//    private void updataSecondaryProgress() {
+    //    private void updataSecondaryProgress() {
 //        int bufferPercentage = video_view.getBufferPercentage();
 //        int percent=sbVideo.getMax()*bufferPercentage/100;
 //        sbVideo.setSecondaryProgress(percent);
@@ -193,7 +218,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             HandlerMediaControllerShowAndHide(3);
             return true;
         } else if (keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
-            Log.i("TAG", "KEYCODE_VOLUME_MUTE");
+
         } else {
 
         }
@@ -220,6 +245,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
         media_controller = findViewById(R.id.media_controller);
         system_videoplay = findViewById(R.id.system_videoplay);
+
+        ll_buffer = findViewById(R.id.ll_buffer);
+        tv_netspeed = findViewById(R.id.tv_netspeed);
         initListener();
     }
 
@@ -233,6 +261,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                 //fromUser是否为手动调节，是则true，否则false
                 if (fromUser) {
                     //若为手动调节则执行下面方法
+                    bufferListenerStart=false;
+                    preCurrentPosition=progress;
                     video_view.seekTo(progress);
                 }
                 //若不加判定则是否手动调节都会执行下面的方法
@@ -270,25 +300,51 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 //        MediaController localMediaController = new MediaController(this);
 //        video_view.setMediaController(localMediaController);
 
+        if (isUseSystem) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                video_view.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                    @Override
+                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                        switch (what) {
+                            case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+                                ll_buffer.setVisibility(View.VISIBLE);
+                                Log.i("TAG", "MEDIA_INFO_BUFFERING_START");
+                                break;
+                            case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+                                ll_buffer.setVisibility(View.GONE);
+                                Log.i("TAG", "MEDIA_INFO_BUFFERING_END");
+                                break;
+                        }
+                        return false;
+                    }
+                });
+            }
+        }
         video_view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
                 mp.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
                     @Override
                     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                            int secondaryProgress = videoDuration * percent / 100;
-                            sbVideo.setSecondaryProgress(secondaryProgress);
+                        int secondaryProgress = videoDuration * percent / 100;
+                        sbVideo.setSecondaryProgress(secondaryProgress);
                     }
                 });
+//                mp.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+//                    @Override
+//                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+//                        return false;
+//                    }
+//                });
                 video_view.start();
 
                 mVideoHeight = mp.getVideoHeight();
                 mVideoWidth = mp.getVideoWidth();
                 setFullScreen(false);
 
-                setMediaControllerVisibility(false);
+                HandlerMediaControllerShowAndHide(1);
 
-                 videoDuration = mp.getDuration();
+                videoDuration = mp.getDuration();
                 sbVideo.setMax(videoDuration);
 
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -339,7 +395,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             return false;
         }
         if (uri.toLowerCase().startsWith("http") || uri.toLowerCase().startsWith("https")
-                || uri.toLowerCase().startsWith("rtsp")|| uri.toLowerCase().startsWith("mms")) {
+                || uri.toLowerCase().startsWith("rtsp") || uri.toLowerCase().startsWith("mms")) {
             return true;
         }
         return false;
@@ -461,21 +517,18 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
             @Override
             public boolean onDoubleTap(MotionEvent e) {
-                Log.i("TAG", "onDoubleTap");
                 setScreenFullAndDefault();
                 return super.onDoubleTap(e);
             }
 
             @Override
             public void onLongPress(MotionEvent e) {
-                Log.i("TAG", "onLongPress");
                 startAndPause();
                 super.onLongPress(e);
             }
 
             @Override
             public boolean onSingleTapConfirmed(MotionEvent e) {
-                Log.i("TAG", "onSingleTapConfirmed");
                 if (media_controller.isShown()) {
                     setMediaControllerVisibility(false);
                     HandlerMediaControllerShowAndHide(2);
@@ -562,11 +615,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
                 if (fromUser) {
                     //若为手动调节则执行下面方法
-                    Log.i("TAG", "fromUser");
-
                     updataVoice(progress, false);
                 } else {
-                    Log.i("TAG", "not fromUser");
 
                 }
             }
@@ -594,12 +644,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private void updataVoice(int progress, boolean mute) {
         if (mute) {
             sbVoice.setProgress(0);
-            btn_voice.setBackgroundResource(R.drawable.btn_voice_mute);
+            btn_voice.setBackgroundResource(R.drawable.btn_voice_mute_selector);
         } else {
             setCurrentVolume(progress);
             setVoice();
             sbVoice.setProgress(progress);
-
         }
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
     }
@@ -607,7 +656,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private void setVoice() {
         if (getCurrentVolume() == 0) {
             isMute = true;
-            btn_voice.setBackgroundResource(R.drawable.btn_voice_mute);
+            btn_voice.setBackgroundResource(R.drawable.btn_voice_mute_pressed);
         } else {
             isMute = false;
             btn_voice.setBackgroundResource(R.drawable.btn_voice_selector);

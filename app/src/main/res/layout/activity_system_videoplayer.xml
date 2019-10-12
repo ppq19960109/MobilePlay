@@ -12,4 +12,5 @@
         android:layout_height="match_parent"/>
 
     <include layout="@layout/media_controller" android:id="@+id/media_controller"/>
+    <include layout="@layout/ll_buffer" android:id="@+id/ll_buffer" />
 </RelativeLayout>
