@@ -467,6 +467,7 @@ public class VitamioVideoPlayer extends Activity implements View.OnClickListener
                 break;
             case R.id.btn_switch:
                 //TODO implement
+                showSwitchDialog();
                 break;
             case R.id.btn_exit:
                 //TODO implement
@@ -490,6 +491,28 @@ public class VitamioVideoPlayer extends Activity implements View.OnClickListener
                 break;
         }
         HandlerMediaControllerShowAndHide(4);
+    }
+    private void showSwitchDialog() {
+        new AlertDialog.Builder(this).setMessage("切换系统播放器？").setTitle("提示").
+                setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        startSystemVideoPlay();
+                    }
+                }).setNegativeButton("取消", null).show();
+    }
+
+    private void startSystemVideoPlay() {
+        Intent intent = new Intent(this, SystemVideoPlayer.class);
+        if (mediaItems == null) {
+            intent.setData(uri);
+        } else {
+            Bundle bundle = new Bundle();
+            bundle.putSerializable("VideoList", mediaItems);
+            intent.putExtras(bundle);
+            intent.putExtra("position", position);
+        }
+        startActivity(intent);
+        finish();
     }
 
     private String getSystemtime() {

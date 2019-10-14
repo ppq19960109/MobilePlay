@@ -1,7 +1,9 @@
 package com.mobileplay.activity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
@@ -485,6 +487,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 break;
             case R.id.btn_switch:
                 //TODO implement
+                showSwitchDialog();
                 break;
             case R.id.btn_exit:
                 //TODO implement
@@ -508,6 +511,15 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                 break;
         }
         HandlerMediaControllerShowAndHide(4);
+    }
+
+    private void showSwitchDialog() {
+        new AlertDialog.Builder(this).setMessage("切换万能播放器？").setTitle("提示").
+                setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        startVitamioVideoPlay();
+                    }
+                }).setNegativeButton("取消", null).show();
     }
 
     private String getSystemtime() {

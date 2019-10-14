@@ -23,7 +23,7 @@
         <activity
             android:name=".activity.SystemVideoPlayer"
             android:label="@string/system_player_name"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+            android:theme="@style/noAnimation_Theme"
             android:configChanges="keyboardHidden|orientation|screenSize" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -56,7 +56,7 @@
         <activity
             android:name=".activity.VitamioVideoPlayer"
             android:label="@string/vitamio_player_name"
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+            android:theme="@style/noAnimation_Theme"
             android:configChanges="keyboardHidden|orientation|screenSize" ></activity>
         <activity
             android:name="io.vov.vitamio.activity.InitActivity"
@@ -65,7 +65,7 @@
             android:theme="@android:style/Theme.NoTitleBar"
             android:windowSoftInputMode="stateAlwaysHidden" />
     </application>
-
+<!--    android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"-->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
