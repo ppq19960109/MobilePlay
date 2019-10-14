@@ -25,4 +25,9 @@ public class MainActivity extends AppCompatActivity {
         intent.setDataAndType(Uri.parse("https://vd3.bdstatic.com/mda-jir8449k6axgtzni/sc/mda-jir8449k6axgtzni.mp4"), "video/*");
         startActivity(intent);
     }
+    public void startAllErr(View view) {
+        Intent intent = new Intent();
+        intent.setDataAndType(Uri.parse("https://vd3.bdstatic.com/mda-jir8449k6axgtzni/sc/mda-jir8449k6axgtzni1.mp4"), "video/*");
+        startActivity(intent);
+    }
 }

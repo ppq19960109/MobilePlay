@@ -1,5 +1,6 @@
 <resources>
     <string name="app_splash">正在启动...</string>
     <string name="app_name">手机影音</string>
-    <string name="player_name">手机影音ok</string>
+    <string name="system_player_name">手机影音system</string>
+    <string name="vitamio_player_name">手机影音vitamio</string>
 </resources>

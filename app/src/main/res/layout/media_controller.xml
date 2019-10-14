@@ -114,7 +114,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:maxHeight="6dp"
-                android:progress="30"
+                android:progress="0"
                 android:secondaryProgress="0"
                 android:progressDrawable="@drawable/progress_horizontal"
                 android:thumb="@drawable/progress_thumb" />

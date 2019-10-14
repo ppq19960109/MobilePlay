@@ -5,12 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.BatteryManager;
 
-import com.mobileplay.activity.SystemVideoPlayer;
-
 public class BatteryChangedReceiver extends BroadcastReceiver {
-    private SystemVideoPlayer videoPlayer;
+    private VideoPlayer videoPlayer;
 
-    public BatteryChangedReceiver(SystemVideoPlayer systemVideoPlayer) {
+    public BatteryChangedReceiver(VideoPlayer systemVideoPlayer) {
         videoPlayer=systemVideoPlayer;
     }
 

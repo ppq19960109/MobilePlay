@@ -22,7 +22,7 @@
             android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity
             android:name=".activity.SystemVideoPlayer"
-            android:label="@string/player_name"
+            android:label="@string/system_player_name"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
             android:configChanges="keyboardHidden|orientation|screenSize" >
             <intent-filter>
@@ -53,6 +53,11 @@
             </intent-filter>
 
         </activity>
+        <activity
+            android:name=".activity.VitamioVideoPlayer"
+            android:label="@string/vitamio_player_name"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+            android:configChanges="keyboardHidden|orientation|screenSize" ></activity>
         <activity
             android:name="io.vov.vitamio.activity.InitActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"

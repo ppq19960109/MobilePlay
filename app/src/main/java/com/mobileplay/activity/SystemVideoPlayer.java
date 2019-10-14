@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import com.mobileplay.R;
 import com.mobileplay.Receiver.BatteryChangedReceiver;
+import com.mobileplay.Receiver.VideoPlayer;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.view.VideoView;
 
@@ -44,8 +45,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 
-
-public class SystemVideoPlayer extends Activity implements View.OnClickListener {
+public class SystemVideoPlayer extends Activity implements View.OnClickListener, VideoPlayer {
     private VideoView video_view;
     private LinearLayout llTop;
     private TextView tvName;
@@ -128,7 +128,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
                     mActivity.bufferListener(currentPosition);
 
-                    mActivity.setNetSpeed();
 
                     removeMessages(1);
                     sendEmptyMessageDelayed(1, 1000);
@@ -137,7 +136,10 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                     mActivity.setMediaControllerVisibility(false);
                     break;
                 case 3:
+                    mActivity.setNetSpeed();
 
+                    removeMessages(3);
+                    sendEmptyMessageDelayed(3, 2000);
                     break;
             }
         }
@@ -148,7 +150,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private void setNetSpeed() {
         String netSpeed = getNetSpeed();
         tv_real_time_net.setText(netSpeed);
-        if(isNet) {
+        if (isNet) {
 
             tv_netspeed.setText("缓冲中..." + netSpeed);
             tv_loading_netspeed.setText("玩命加载中..." + netSpeed);
@@ -213,10 +215,14 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     @Override
     protected void onDestroy() {
+        Log.i("TAG", "systemplay onDestroy");
         handler.removeCallbacksAndMessages(null);
         if (batteryChangedReceiver != null) {
             unregisterReceiver(batteryChangedReceiver);
             batteryChangedReceiver = null;
+        }
+        if (video_view != null) {
+            video_view.stopPlayback();
         }
         super.onDestroy();
     }
@@ -265,7 +271,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         btn_next = findViewById(R.id.btn_next);
         btn_full_screen = findViewById(R.id.btn_full_screen);
         btn_voice = findViewById(R.id.btn_voice);
-        tv_real_time_net= findViewById(R.id.tv_real_time_net);
+        tv_real_time_net = findViewById(R.id.tv_real_time_net);
 
         media_controller = findViewById(R.id.media_controller);
         system_videoplay = findViewById(R.id.system_videoplay);
@@ -287,8 +293,10 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                 //fromUser是否为手动调节，是则true，否则false
                 if (fromUser) {
                     //若为手动调节则执行下面方法
-                    bufferListenerStart = false;
-                    preCurrentPosition = progress;
+                    if (!isUseSystem) {
+                        bufferListenerStart = false;
+                        preCurrentPosition = progress;
+                    }
                     video_view.seekTo(progress);
                 }
                 //若不加判定则是否手动调节都会执行下面的方法
@@ -322,6 +330,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     //播放本地视频
     private void initLocalVideo() {
+
         //设置有进度条可以拖动快进
 //        MediaController localMediaController = new MediaController(this);
 //        video_view.setMediaController(localMediaController);
@@ -349,6 +358,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         video_view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
+
                 mp.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
                     @Override
                     public void onBufferingUpdate(MediaPlayer mp, int percent) {
@@ -384,15 +394,20 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                 tvDuration.setText(simpleDateFormat.format(videoDuration));
 
                 ll_loading.setVisibility(View.GONE);
-//                handler.sendEmptyMessage(1);
+                handler.sendEmptyMessage(1);
             }
         });
 
         video_view.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
-                Log.i("TAG", "onError: MediaPlayer");
-                return false;
+                Log.i("TAG", "onError: MediaPlayer" + "what=" + what + "extra=" + extra);
+                switch (extra) {
+
+                }
+                startVitamioVideoPlay();
+
+                return true;
             }
         });
 
@@ -424,7 +439,25 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         }
 
         setButtonState();
-        handler.sendEmptyMessage(1);
+        handler.sendEmptyMessage(3);
+//        startVitamioVideoPlay();
+    }
+
+    private void startVitamioVideoPlay() {
+//        if(video_view!=null){
+//            video_view.stopPlayback();
+//        }
+        Intent intent = new Intent(this, VitamioVideoPlayer.class);
+        if (mediaItems == null) {
+            intent.setData(uri);
+        } else {
+            Bundle bundle = new Bundle();
+            bundle.putSerializable("VideoList", mediaItems);
+            intent.putExtras(bundle);
+            intent.putExtra("position", position);
+        }
+        startActivity(intent);
+        finish();
     }
 
     private boolean isNetUri(String uri) {
@@ -501,7 +534,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     //getApplicationInfo().uid
     public long getTotalRxBytes(int uid) {
-        return TrafficStats.getUidRxBytes(uid) == TrafficStats.UNSUPPORTED ? 0 : (TrafficStats.getUidRxBytes(uid) / 1024);//转为KB
+        return TrafficStats.getUidRxBytes(uid) == TrafficStats.UNSUPPORTED ? 0 : (TrafficStats.getTotalRxBytes() / 1024);//转为KB
     }
 
     private void setGestureDetector() {
