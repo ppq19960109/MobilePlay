@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.TrafficStats;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -42,8 +43,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import io.vov.vitamio.LibsChecker;
-import io.vov.vitamio.Vitamio;
 
 
 public class SystemVideoPlayer extends Activity implements View.OnClickListener {
@@ -94,9 +93,17 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     private View ll_buffer;
     private TextView tv_netspeed;
-    private boolean isUseSystem=false;
+    private View ll_loading;
+    private TextView tv_loading_netspeed;
+
+    private boolean isNet;
+    private boolean isUseSystem = true;
     private int preCurrentPosition;
     private boolean bufferListenerStart;
+
+    private long lastTotalRxBytes;
+    private long lastTimeStamp;
+    private TextView tv_real_time_net;
 
     private static class MyHandler extends Handler {
         private WeakReference<Activity> mWeakReference;
@@ -119,15 +126,18 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
                     mActivity.tvSystemTime.setText(mActivity.getSystemtime());
 
-                    if(!mActivity.isUseSystem){
+                    mActivity.bufferListener(currentPosition);
 
-                        mActivity.bufferListener(currentPosition);
-                    }
+                    mActivity.setNetSpeed();
+
                     removeMessages(1);
                     sendEmptyMessageDelayed(1, 1000);
                     break;
                 case 2:
                     mActivity.setMediaControllerVisibility(false);
+                    break;
+                case 3:
+
                     break;
             }
         }
@@ -135,12 +145,25 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     }
 
+    private void setNetSpeed() {
+        String netSpeed = getNetSpeed();
+        tv_real_time_net.setText(netSpeed);
+        if(isNet) {
+
+            tv_netspeed.setText("缓冲中..." + netSpeed);
+            tv_loading_netspeed.setText("玩命加载中..." + netSpeed);
+        }
+    }
+
     private void bufferListener(int currentPosition) {
-        if(!bufferListenerStart){
-            bufferListenerStart=true;
+        if (isUseSystem) {
             return;
         }
-        if(video_view.isPlaying()) {
+        if (!bufferListenerStart) {
+            bufferListenerStart = true;
+            return;
+        }
+        if (video_view.isPlaying()) {
             int buffer = currentPosition - preCurrentPosition;
             preCurrentPosition = currentPosition;
             if (buffer < 500) {
@@ -148,7 +171,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             } else {
                 ll_buffer.setVisibility(View.GONE);
             }
-        }else {
+        } else {
             ll_buffer.setVisibility(View.GONE);
         }
     }
@@ -165,13 +188,13 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_system_videoplayer);
-        if (!LibsChecker.checkVitamioLibs(this)) {
-            return;
-        }
-        Log.i("TAG", "Vitamio");
-        if (Vitamio.isInitialized(this)) {
-            Log.i("TAG", "Vitamio isInitialized");
-        }
+//        if (!LibsChecker.checkVitamioLibs(this)) {
+//            return;
+//        }
+//        Log.i("TAG", "Vitamio");
+//        if (Vitamio.isInitialized(this)) {
+//            Log.i("TAG", "Vitamio isInitialized");
+//        }
         initView();
         initData();
         initLocalVideo();
@@ -242,12 +265,15 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         btn_next = findViewById(R.id.btn_next);
         btn_full_screen = findViewById(R.id.btn_full_screen);
         btn_voice = findViewById(R.id.btn_voice);
+        tv_real_time_net= findViewById(R.id.tv_real_time_net);
 
         media_controller = findViewById(R.id.media_controller);
         system_videoplay = findViewById(R.id.system_videoplay);
 
         ll_buffer = findViewById(R.id.ll_buffer);
         tv_netspeed = findViewById(R.id.tv_netspeed);
+        ll_loading = findViewById(R.id.ll_loading);
+        tv_loading_netspeed = findViewById(R.id.tv_loading_netspeed);
         initListener();
     }
 
@@ -261,8 +287,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                 //fromUser是否为手动调节，是则true，否则false
                 if (fromUser) {
                     //若为手动调节则执行下面方法
-                    bufferListenerStart=false;
-                    preCurrentPosition=progress;
+                    bufferListenerStart = false;
+                    preCurrentPosition = progress;
                     video_view.seekTo(progress);
                 }
                 //若不加判定则是否手动调节都会执行下面的方法
@@ -330,12 +356,19 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                         sbVideo.setSecondaryProgress(secondaryProgress);
                     }
                 });
+                mp.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
+                    @Override
+                    public void onSeekComplete(MediaPlayer mp) {
+
+                    }
+                });
 //                mp.setOnInfoListener(new MediaPlayer.OnInfoListener() {
 //                    @Override
 //                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
 //                        return false;
 //                    }
 //                });
+
                 video_view.start();
 
                 mVideoHeight = mp.getVideoHeight();
@@ -350,7 +383,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
                 tvDuration.setText(simpleDateFormat.format(videoDuration));
 
-                handler.sendEmptyMessage(1);
+                ll_loading.setVisibility(View.GONE);
+//                handler.sendEmptyMessage(1);
             }
         });
 
@@ -358,7 +392,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
                 Log.i("TAG", "onError: MediaPlayer");
-                return true;
+                return false;
             }
         });
 
@@ -377,17 +411,20 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         if (mediaItems == null) {
             uri = getIntent().getData();
             if (uri != null) {
+                isNet = isNetUri(uri.toString());
                 tvName.setText(uri.toString());
                 video_view.setVideoURI(uri);
             }
         } else {
             position = getIntent().getIntExtra("position", 0);
             MediaItem mediaItem = mediaItems.get(position);
+            isNet = isNetUri(mediaItem.getData());
             tvName.setText(mediaItem.getName());
             video_view.setVideoPath(mediaItem.getData());
         }
 
         setButtonState();
+        handler.sendEmptyMessage(1);
     }
 
     private boolean isNetUri(String uri) {
@@ -451,6 +488,20 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         getWindowManager().getDefaultDisplay().getMetrics(outMetrics);
         screenWidth = outMetrics.widthPixels;
         screenHeight = outMetrics.heightPixels;
+    }
+
+    public String getNetSpeed() {
+        long nowTotalRxBytes = getTotalRxBytes(getApplicationInfo().uid);
+        long nowTimeStamp = System.currentTimeMillis();
+        long speed = ((nowTotalRxBytes - lastTotalRxBytes) * 1000 / (nowTimeStamp - lastTimeStamp));//毫秒转换
+        lastTimeStamp = nowTimeStamp;
+        lastTotalRxBytes = nowTotalRxBytes;
+        return String.valueOf(speed) + " kb/s";
+    }
+
+    //getApplicationInfo().uid
+    public long getTotalRxBytes(int uid) {
+        return TrafficStats.getUidRxBytes(uid) == TrafficStats.UNSUPPORTED ? 0 : (TrafficStats.getUidRxBytes(uid) / 1024);//转为KB
     }
 
     private void setGestureDetector() {
@@ -703,8 +754,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
 
     private void playPreVideo() {
         --position;
-
+        ll_loading.setVisibility(View.VISIBLE);
         MediaItem mediaItem = mediaItems.get(position);
+        isNet = isNetUri(mediaItem.getData());
         tvName.setText(mediaItem.getName());
         video_view.setVideoPath(mediaItem.getData());
 
@@ -714,8 +766,9 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     private void playNextVideo() {
         if (position + 1 < mediaItems.size()) {
             ++position;
-
+            ll_loading.setVisibility(View.VISIBLE);
             MediaItem mediaItem = mediaItems.get(position);
+            isNet = isNetUri(mediaItem.getData());
             tvName.setText(mediaItem.getName());
             video_view.setVideoPath(mediaItem.getData());
 

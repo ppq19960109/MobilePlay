@@ -1,0 +1,144 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="io.vov.vitamio.demo"
+4    android:versionCode="2"
+5    android:versionName="0.0.2" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="15"
+8-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml
+9        android:targetSdkVersion="28" />
+9-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml
+10
+11    <!-- <uses-sdk -->
+12    <!-- android:minSdkVersion="7" -->
+13    <!-- android:targetSdkVersion="19" /> -->
+14
+15    <uses-permission android:name="android.permission.WAKE_LOCK" />
+15-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:11:5-68
+15-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:11:22-65
+16    <uses-permission android:name="android.permission.INTERNET" />
+16-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:12:5-67
+16-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:12:22-64
+17    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+17-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:13:5-79
+17-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:13:22-76
+18    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+18-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:14:5-80
+18-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:14:22-77
+19
+20    <application
+20-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:16:5-77:19
+21        android:allowBackup="false"
+21-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:17:9-36
+22        android:debuggable="true"
+23        android:icon="@drawable/ic_launcher"
+23-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:18:9-45
+24        android:label="@string/vitamio_demo_name" >
+24-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:19:9-50
+25
+26        <!-- Don't forgot InitActivity -->
+27        <activity
+27-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:22:9-27:63
+28            android:name="io.vov.vitamio.activity.InitActivity"
+28-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:23:13-64
+29            android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
+29-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:24:13-113
+30            android:launchMode="singleTop"
+30-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:25:13-43
+31            android:theme="@android:style/Theme.NoTitleBar"
+31-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:26:13-60
+32            android:windowSoftInputMode="stateAlwaysHidden" />
+32-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:27:13-60
+33        <activity android:name="io.vov.vitamio.demo.VitamioListActivity" >
+33-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:28:9-35:20
+33-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:28:19-54
+34            <intent-filter>
+34-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:29:13-34:29
+35                <action android:name="android.intent.action.MAIN" />
+35-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:30:17-69
+35-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:30:25-66
+36
+37                <category android:name="android.intent.category.DEFAULT" />
+37-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:32:17-76
+37-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:32:27-73
+38                <category android:name="android.intent.category.LAUNCHER" />
+38-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:33:17-77
+38-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:33:27-74
+39            </intent-filter>
+40        </activity>
+41        <activity
+41-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:36:9-39:20
+42            android:name="io.vov.vitamio.demo.MediaPlayerDemo"
+42-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:37:13-44
+43            android:label="Media/MediaPlayer" >
+43-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:38:13-46
+44        </activity>
+45        <activity
+45-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:40:9-44:20
+46            android:name="io.vov.vitamio.demo.VideoViewDemo"
+46-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:41:13-42
+47            android:configChanges="orientation|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
+47-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:42:13-113
+48            android:label="Media/VideoView" >
+48-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:43:13-44
+49        </activity>
+50        <activity
+50-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:45:9-48:20
+51            android:name="io.vov.vitamio.demo.MediaPlayerDemo_Video"
+51-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:46:13-50
+52            android:label="Media/MediaPlayer" >
+52-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:47:13-46
+53        </activity>
+54        <activity
+54-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:49:9-52:20
+55            android:name="io.vov.vitamio.demo.MediaPlayerDemo_setSurface"
+55-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:50:13-55
+56            android:label="Media/MediaPlayer" >
+56-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:51:13-46
+57        </activity>
+58        <activity
+58-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:53:9-56:20
+59            android:name="io.vov.vitamio.demo.MediaPlayerDemo_Audio"
+59-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:54:13-50
+60            android:label="Media/MediaPlayer" >
+60-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:55:13-46
+61        </activity>
+62        <activity
+62-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:57:9-60:20
+63            android:name="io.vov.vitamio.demo.MediaMetadataRetrieverDemo"
+63-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:58:13-55
+64            android:label="Media/MediaMetadata" >
+64-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:59:13-48
+65        </activity>
+66        <activity
+66-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:61:9-64:20
+67            android:name="io.vov.vitamio.demo.MediaPlayerSubtitle"
+67-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:62:13-48
+68            android:label="@string/title_activity_media_player_subtitle" >
+68-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:63:13-73
+69        </activity>
+70        <activity
+70-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:65:9-68:20
+71            android:name="io.vov.vitamio.demo.VideoViewSubtitle"
+71-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:66:13-46
+72            android:label="@string/title_activity_video_view_subtitle" >
+72-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:67:13-71
+73        </activity>
+74        <activity
+74-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:69:9-72:20
+75            android:name="io.vov.vitamio.demo.VideoSubtitleList"
+75-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:70:13-46
+76            android:label="@string/title_activity_video_subtitle_list" >
+76-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:71:13-71
+77        </activity>
+78        <activity
+78-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:73:9-76:20
+79            android:name="io.vov.vitamio.demo.VideoViewBuffer"
+79-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:74:13-44
+80            android:label="@string/title_activity_video_buffer" >
+80-->D:\ppq\android\androidworkspace\MobilePlay\vitamio-sample\AndroidManifest.xml:75:13-64
+81        </activity>
+82    </application>
+83
+84</manifest>

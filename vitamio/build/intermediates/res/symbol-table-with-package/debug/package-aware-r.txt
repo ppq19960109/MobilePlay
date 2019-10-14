@@ -2,6 +2,7 @@ io.vov.vitamio
 color mediacontroller_bg
 color mediacontroller_bg_pressed
 color transparent
+drawable ic_launcher
 drawable mediacontroller_button
 drawable mediacontroller_pause
 drawable mediacontroller_play
@@ -20,7 +21,6 @@ id mediacontroller_seekbar
 id mediacontroller_time_current
 id mediacontroller_time_total
 layout mediacontroller
-raw libarm
 string VideoView_error_button
 string VideoView_error_text_invalid_progressive_playback
 string VideoView_error_text_unknown
