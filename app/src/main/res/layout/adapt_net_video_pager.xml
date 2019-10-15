@@ -27,7 +27,7 @@
             android:layout_alignRight="@+id/iv_icon"
             android:layout_marginBottom="8dp"
             android:layout_marginRight="8dp"
-            android:src="@drawable/video_default_icon" />
+            android:src="@drawable/center_collect_play" />
     </RelativeLayout>
 
     <LinearLayout

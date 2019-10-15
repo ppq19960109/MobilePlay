@@ -131,15 +131,20 @@ public class VideoPager extends BasePager {
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        Context context1 = getContext();
+        Log.i("TAG", "onAttach: "+context1);
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
         initData();
+        setListViewListener();
+    }
+
+    private void setListViewListener() {
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -161,6 +166,12 @@ public class VideoPager extends BasePager {
             }
 
         });
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
     }
 
     @Override

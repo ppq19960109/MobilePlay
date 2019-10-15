@@ -9,6 +9,7 @@ public class MediaItem implements Serializable {
     private String data;
     private String artist;
 
+
     public String getName() {
         return name;
     }

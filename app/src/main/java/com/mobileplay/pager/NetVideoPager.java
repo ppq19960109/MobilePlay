@@ -25,9 +25,10 @@ import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.base.BasePager;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.doamain.Movie;
-import com.mobileplay.doamain.Trailers;
+import com.mobileplay.doamain.NetMediaItem;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -41,7 +42,7 @@ public class NetVideoPager extends BasePager {
     private ListView listview;
     private TextView tv_nomedia;
     private ProgressBar pb_load;
-    private Trailers mediaItems;
+    private ArrayList<Movie> NetMediaItems;
 
     private Handler handler = new Handler() {
         @Override
@@ -49,8 +50,8 @@ public class NetVideoPager extends BasePager {
             super.handleMessage(msg);
             switch (msg.what) {
                 case 1:
-                    if (mediaItems != null && mediaItems.getTrailers().size() > 0) {
-                        NetVideoAdapter netVideoAdapter = new NetVideoAdapter(getContext(), mediaItems.getTrailers());
+                    if (NetMediaItems != null && NetMediaItems.size() > 0) {
+                        NetVideoAdapter netVideoAdapter = new NetVideoAdapter(getContext(), NetMediaItems);
                         listview.setAdapter(netVideoAdapter);
                     } else {
                         tv_nomedia.setVisibility(View.VISIBLE);
@@ -76,9 +77,13 @@ public class NetVideoPager extends BasePager {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        initData();
+    public void onStart() {
+        super.onStart();
+
+
+    }
+
+    private void setListViewListener() {
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -91,7 +96,7 @@ public class NetVideoPager extends BasePager {
 
                     Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable("VideoList",  mediaItems.getTrailers());
+                    bundle.putSerializable("VideoList",  NetMediaItems);
                     intent.putExtras(bundle);
                     intent.putExtra("position",position);
                     getContext().startActivity(intent);
@@ -100,6 +105,12 @@ public class NetVideoPager extends BasePager {
             }
 
         });
+    }
+
+    public void onResume() {
+        super.onResume();
+
+
     }
 
     @Nullable
@@ -118,6 +129,14 @@ public class NetVideoPager extends BasePager {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         initView(view);
+        initData();
+
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        setListViewListener();
     }
 
     public void initView(View view) {
@@ -147,17 +166,17 @@ public class NetVideoPager extends BasePager {
                 .build();   //构建实例
         GetRequest_Interface retrofitService = retrofit.create(GetRequest_Interface.class);
 
-        Call<Trailers> call = retrofitService.getCall();
-        call.enqueue(new Callback<Trailers>() {
+        Call<NetMediaItem> call = retrofitService.getCall();
+        call.enqueue(new Callback<NetMediaItem>() {
             @Override
-            public void onResponse(Call<Trailers> call, Response<Trailers> response) {
-                mediaItems= response.body();
+            public void onResponse(Call<NetMediaItem> call, Response<NetMediaItem> response) {
+                NetMediaItems= response.body().getTrailers();
                 handler.sendEmptyMessage(1);
 //                Log.i("TAG", "onResponse: ="+trailers);
             }
 
             @Override
-            public void onFailure(Call<Trailers> call, Throwable t) {
+            public void onFailure(Call<NetMediaItem> call, Throwable t) {
                 Log.i("TAG", "onFailure:"+t);
             }
         });

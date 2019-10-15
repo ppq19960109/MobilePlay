@@ -130,4 +130,5 @@ public class Movie extends MediaItem implements Serializable {
     public String getData() {
         return getHightUrl();
     }
+
 }

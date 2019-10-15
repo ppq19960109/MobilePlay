@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Trailers {
+public class NetMediaItem {
     private ArrayList<Movie> trailers;
 
     public ArrayList<Movie> getTrailers() {
@@ -14,6 +14,7 @@ public class Trailers {
     public void setTrailers(ArrayList<Movie> trailers) {
         this.trailers = trailers;
     }
+
 
     @Override
     public String toString() {
