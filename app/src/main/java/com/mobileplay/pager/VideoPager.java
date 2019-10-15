@@ -45,8 +45,9 @@ public class VideoPager extends BasePager {
     private ListView listview;
     private TextView tv_nomedia;
     private ProgressBar pb_load;
-    private VideoAdapter videoAdapter;
+
     private ArrayList<MediaItem> mediaItems = new ArrayList<>();
+
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -54,7 +55,7 @@ public class VideoPager extends BasePager {
             switch (msg.what) {
                 case 1:
                     if (mediaItems != null && mediaItems.size() > 0) {
-                        videoAdapter = new VideoAdapter(getContext(), mediaItems);
+                        VideoAdapter videoAdapter = new VideoAdapter(getContext(), mediaItems);
                         listview.setAdapter(videoAdapter);
                     } else {
                         tv_nomedia.setVisibility(View.VISIBLE);
@@ -72,7 +73,7 @@ public class VideoPager extends BasePager {
     }
 
     @Override
-    public View initView() {
+    public View initRootView() {
 
         return null;
     }

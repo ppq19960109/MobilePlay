@@ -20,10 +20,10 @@ public abstract class BasePager extends Fragment {
     }
     public BasePager(Context context) {
         this.context = context;
-        rootView = initView();
+        rootView = initRootView();
     }
 
-    public abstract View initView();
+    public abstract View initRootView();
 
     public void initData() {
     }

@@ -17,7 +17,7 @@ public class NetAudioPager extends BasePager {
     }
 
     @Override
-    public View initView() {
+    public View initRootView() {
         TextView textView = new TextView(context);
         textView.setText("NetAudioPager");
         return textView;
