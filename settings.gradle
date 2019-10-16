@@ -1,2 +1,2 @@
-include ':app', ':startall', ':vitamio-sample', ':vitamio', ':xutils', ':xUtils3_sample', ':Agoraapp', ':logger'
+include ':app', ':startall', ':vitamio-sample', ':vitamio'
 rootProject.name='MobilePlay'
