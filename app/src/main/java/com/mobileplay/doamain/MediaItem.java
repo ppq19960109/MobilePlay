@@ -10,15 +10,7 @@ public class MediaItem implements Serializable {
     private long size;
     private String data;
     private String artist;
-    private Bitmap bitmap;
 
-    public Bitmap getBitmap() {
-        return bitmap;
-    }
-
-    public void setBitmap(Bitmap bitmap) {
-        this.bitmap = bitmap;
-    }
 
     public String getName() {
         return name;

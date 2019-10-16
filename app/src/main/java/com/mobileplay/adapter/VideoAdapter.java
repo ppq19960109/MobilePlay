@@ -56,7 +56,7 @@ public class VideoAdapter extends BaseAdapter {
         }
         MediaItem mediaItem = mediaItems.get(position);
 
-        videoHolder.iv_icon.setImageBitmap(mediaItem.getBitmap());
+//        videoHolder.iv_icon.setImageBitmap(mediaItem.getBitmap());
         videoHolder.tv_name.setText(mediaItem.getName());
         videoHolder.tv_size.setText(Formatter.formatFileSize(context, mediaItem.getSize()));
 

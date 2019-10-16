@@ -118,7 +118,7 @@ public class VideoPager extends BasePager {
                         String artist = query.getString(4);
                         mediaItem.setArtist(artist);
 
-                        mediaItem.setBitmap(getVideoThumbnail(data));
+//                        mediaItem.setBitmap(getVideoThumbnail(data));
                     }
                     query.close();
                 }

@@ -25,6 +25,7 @@ import com.mobileplay.activity.SystemVideoPlayer;
 import com.mobileplay.adapter.NetVideoAdapter;
 import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.base.BasePager;
+import com.mobileplay.common.CacheUtils;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.doamain.Movie;
@@ -200,7 +201,7 @@ public class NetVideoPager extends BasePager {
     @Override
     public void initData() {
         super.initData();
-
+        NetMediaItems= (ArrayList<Movie>)CacheUtils.readObject(context,"NetVideo");
         getRetrofit();
     }
 
@@ -216,6 +217,7 @@ public class NetVideoPager extends BasePager {
             @Override
             public void onResponse(Call<NetMediaItem> call, Response<NetMediaItem> response) {
                 NetMediaItems= response.body().getTrailers();
+                CacheUtils.saveObject(context,NetMediaItems,"NetVideo");
                 handler.sendEmptyMessage(1);
 
 //                Log.i("TAG", "onResponse: ="+trailers);
@@ -224,6 +226,7 @@ public class NetVideoPager extends BasePager {
             @Override
             public void onFailure(Call<NetMediaItem> call, Throwable t) {
                 Log.i("TAG", "onFailure:"+t);
+                handler.sendEmptyMessage(1);
             }
         });
     }
