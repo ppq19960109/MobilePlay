@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 
+import android.graphics.Bitmap;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -82,6 +84,7 @@ public class VideoPager extends BasePager {
     public void initData() {
         super.initData();
         getDataFromLocal();
+
     }
 
     private void getDataFromLocal() {
@@ -115,6 +118,7 @@ public class VideoPager extends BasePager {
                         String artist = query.getString(4);
                         mediaItem.setArtist(artist);
 
+                        mediaItem.setBitmap(getVideoThumbnail(data));
                     }
                     query.close();
                 }
@@ -122,6 +126,27 @@ public class VideoPager extends BasePager {
                 handler.sendEmptyMessage(1);
             }
         }.start();
+    }
+    // 获取视频缩略图
+    public Bitmap getVideoThumbnail(String filePath) {
+        Bitmap b=null;
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(filePath);
+            b=retriever.getFrameAtTime();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+
+        } finally {
+            try {
+                retriever.release();
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
+        return b;
     }
 
     @Nullable

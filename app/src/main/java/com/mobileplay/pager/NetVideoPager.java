@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.mobileplay.Interface.GetRequest_Interface;
 import com.mobileplay.R;
@@ -23,6 +25,7 @@ import com.mobileplay.activity.SystemVideoPlayer;
 import com.mobileplay.adapter.NetVideoAdapter;
 import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.base.BasePager;
+import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.doamain.Movie;
 import com.mobileplay.doamain.NetMediaItem;
@@ -43,6 +46,8 @@ public class NetVideoPager extends BasePager {
     private TextView tv_nomedia;
     private ProgressBar pb_load;
     private ArrayList<Movie> NetMediaItems;
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout;
+
 
     private Handler handler = new Handler() {
         @Override
@@ -52,15 +57,19 @@ public class NetVideoPager extends BasePager {
                 case 1:
                     if (NetMediaItems != null && NetMediaItems.size() > 0) {
                         NetVideoAdapter netVideoAdapter = new NetVideoAdapter(getContext(), NetMediaItems);
+//                        netVideoAdapter.notifyDataSetChanged();
                         listview.setAdapter(netVideoAdapter);
                     } else {
                         tv_nomedia.setVisibility(View.VISIBLE);
                     }
                     pb_load.setVisibility(View.GONE);
+                    swipeRefreshLayout.setRefreshing(false);
                     break;
             }
         }
     };
+
+
     public NetVideoPager() {
 
     }
@@ -140,10 +149,46 @@ public class NetVideoPager extends BasePager {
     }
 
     public void initView(View view) {
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
         listview = view.findViewById(R.id.listview);
         tv_nomedia = view.findViewById(R.id.tv_nomedia);
         pb_load = view.findViewById(R.id.pb_load);
 
+        swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light, android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+               new Thread(){
+                   @Override
+                   public void run() {
+                       super.run();
+                       initData();
+                   }
+               }.start();
+            }
+        });
+        listview.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                switch (scrollState){
+                    //当不滚动的时候
+                    case AbsListView.OnScrollListener.SCROLL_STATE_IDLE:
+
+                        //判断是否是最底部
+                        if(view.getLastVisiblePosition()==(view.getCount())-1 ){
+                            CommonUtils.showToastMsg(null,"我是底部");
+                        }
+                        break;
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+            }
+        });
     }
 
     @Override
@@ -172,6 +217,7 @@ public class NetVideoPager extends BasePager {
             public void onResponse(Call<NetMediaItem> call, Response<NetMediaItem> response) {
                 NetMediaItems= response.body().getTrailers();
                 handler.sendEmptyMessage(1);
+
 //                Log.i("TAG", "onResponse: ="+trailers);
             }
 
