@@ -24,6 +24,9 @@ public abstract class BasePager extends Fragment {
             mReference.mHandleMessage(msg);
         }
     }
+    public void mHandleMessage(Message msg) {
+
+    }
 
     public Context context;
 
@@ -46,7 +49,5 @@ public abstract class BasePager extends Fragment {
     public void initData() {
     }
 
-    public void mHandleMessage(Message msg) {
 
-    }
 }

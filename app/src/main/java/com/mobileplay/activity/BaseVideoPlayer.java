@@ -33,6 +33,7 @@ import androidx.annotation.Nullable;
 import com.mobileplay.R;
 import com.mobileplay.Receiver.BatteryChangedReceiver;
 import com.mobileplay.Receiver.IBatteryChanged;
+import com.mobileplay.base.BasePager;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.view.VideoView;
 
@@ -55,115 +56,227 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
     private View ll_buffer;
     private View ll_loading;
     /**
-     *  media_controller
+     * media_controller
      */
+    //上一半
     private TextView tv_name;
     //电池
     private ImageView iv_battery;
     private TextView tv_battery;
-    private TextView tv_real_time_net;
-    private TextView tv_systemTime;
+    private TextView tv_real_time_net_speed;
+    private TextView tv_system_time;
+    private Button btn_voice;
     private SeekBar sb_voice;
-
-
-    private RelativeLayout system_videoplay;
+    //下一半
     private TextView tvCurrentTime;
     private SeekBar sbVideo;
     private TextView tvDuration;
     private Button btn_next;
     private Button btn_pre;
     private Button btn_full_screen;
-    private Button btn_voice;
 
-
+    /**
+     * ll_buffer
+     */
     private TextView tv_netspeed;
-
+    /**
+     * ll_loading
+     */
     private TextView tv_loading_netspeed;
-
+    /**
+     * 电池
+     */
     private BatteryChangedReceiver batteryChangedReceiver;
-
+    /**
+     * 视频信息
+     */
     private ArrayList<MediaItem> mediaItems;
     private int position;
     private Uri uri;
-
+    private boolean isNet;
+    private int videoDuration;
+    /**
+     * 手势
+     */
     private GestureDetector gestureDetector;
-
+    //滑动调音
+    private boolean firstScroll;
+    private int scrollFlag;
+    private int screenWidth;
+    private int screenHeight;
+    /**
+     * 屏幕、全屏
+     */
     private boolean isFullScreen;
     private int mVideoWidth;
     private int mVideoHeight;
-
+    /**
+     * 声音控制
+     */
     private AudioManager audioManager;
     private int maxVolume;
     private int currentVolume;
     private int scrollCurrentVolume;
     private boolean isMute;
 
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-
-    private boolean firstScroll;
-    private int scrollFlag;
-    private int screenWidth;
-    private int screenHeight;
-
-    private int videoDuration;
-
-    private boolean isNet;
+    /**
+     * 缓冲监听
+     */
     private boolean isUseSystem = true;
     private int preCurrentPosition;
     private boolean bufferListenerStart;
-
+    /**
+     * 网速
+     */
     private long lastTotalRxBytes;
     private long lastTimeStamp;
 
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
 
-    private Handler handler = new MyHandler(this);
+    private Handler handler = new mHandler(this);
+    public static class mHandler extends Handler {
+        private WeakReference<Object> mWeakReference;
 
-    private static class MyHandler extends Handler {
-        private WeakReference<Activity> mWeakReference;
-
-        private MyHandler(Activity activity) {
-            mWeakReference = new WeakReference<>(activity);
+        public mHandler(Object object) {
+            mWeakReference = new WeakReference<>(object);
         }
 
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            BaseVideoPlayer mActivity = (BaseVideoPlayer) mWeakReference.get();
-            switch (msg.what) {
-                case 1:
-                    int currentPosition = mActivity.video_view.getCurrentPosition();
-                    mActivity.sbVideo.setProgress(currentPosition);
+            BaseVideoPlayer mReference = (BaseVideoPlayer) mWeakReference.get();
+            mReference.mHandleMessage(msg);
+        }
+    }
 
-                    mActivity.simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    mActivity.tvCurrentTime.setText(mActivity.simpleDateFormat.format(currentPosition));
+    public void mHandleMessage(Message msg) {
+        switch (msg.what) {
+            case 1:
+                int currentPosition = video_view.getCurrentPosition();
+                sbVideo.setProgress(currentPosition);
 
-                    mActivity.tv_systemTime.setText(mActivity.getSystemtime());
+                simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                tvCurrentTime.setText(simpleDateFormat.format(currentPosition));
 
-                    mActivity.bufferListener(currentPosition);
+                setSystemtime();
 
-                    removeMessages(1);
-                    sendEmptyMessageDelayed(1, 1000);
-                    break;
-                case 2:
-                    mActivity.setMediaControllerVisibility(false);
-                    break;
-                case 3:
-                    mActivity.setNetSpeed();
+                bufferListener(currentPosition);
 
-                    removeMessages(3);
-                    sendEmptyMessageDelayed(3, 2000);
-                    break;
+                handler.removeMessages(1);
+                handler.sendEmptyMessageDelayed(1, 1000);
+                break;
+            case 2:
+                setMediaControllerVisibility(false);
+                break;
+            case 3:
+                setNetSpeed();
+
+                handler.removeMessages(3);
+                handler.sendEmptyMessageDelayed(3, 2000);
+                break;
+        }
+    }
+
+    public void close() {
+        handler.removeCallbacksAndMessages(null);
+        if (batteryChangedReceiver != null) {
+            unregisterReceiver(batteryChangedReceiver);
+            batteryChangedReceiver = null;
+        }
+        if (video_view != null) {
+            video_view.stopPlayback();
+        }
+    }
+    /**
+     * VideoPlayer
+     */
+
+    /**
+     * media_controller
+     */
+    //上一半
+    private void setSystemtime() {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        String systemtime = simpleDateFormat.format(new Date());
+        tv_system_time.setText(systemtime);
+    }
+
+    //电池
+    private void registerBatteryReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        batteryChangedReceiver = new BatteryChangedReceiver(new BatteryChanged());
+        registerReceiver(batteryChangedReceiver, intentFilter);
+    }
+
+    private class BatteryChanged implements IBatteryChanged {
+        @Override
+        public void setBattery(int batteryLevel) {
+            if (tv_battery != null) {
+                tv_battery.setText(batteryLevel + "%");
+            }
+            if (iv_battery != null) {
+                ImageView view = iv_battery;
+                if (batteryLevel <= 10) {
+                    view.setImageResource(R.drawable.ic_battery_10);
+                } else if (batteryLevel <= 20) {
+                    view.setImageResource(R.drawable.ic_battery_20);
+                } else if (batteryLevel <= 40) {
+                    view.setImageResource(R.drawable.ic_battery_40);
+                } else if (batteryLevel <= 60) {
+                    view.setImageResource(R.drawable.ic_battery_60);
+                } else if (batteryLevel <= 80) {
+                    view.setImageResource(R.drawable.ic_battery_80);
+                } else if (batteryLevel >= 100) {
+                    view.setImageResource(R.drawable.ic_battery_100);
+                }
             }
         }
     }
 
+    //下一半
+    //网速设置
+    public long getTotalRxBytes(int uid) {
+        return TrafficStats.getUidRxBytes(uid) == TrafficStats.UNSUPPORTED ? 0 : (TrafficStats.getTotalRxBytes() / 1024);//转为KB
+    }
+
+    public String getNetSpeed() {
+        long nowTotalRxBytes = getTotalRxBytes(getApplicationInfo().uid);
+        long nowTimeStamp = System.currentTimeMillis();
+        long speed = ((nowTotalRxBytes - lastTotalRxBytes) * 1000 / (nowTimeStamp - lastTimeStamp));//毫秒转换
+        lastTimeStamp = nowTimeStamp;
+        lastTotalRxBytes = nowTotalRxBytes;
+        return String.valueOf(speed) + " kb/s";
+    }
+
     private void setNetSpeed() {
         String netSpeed = getNetSpeed();
-        tv_real_time_net.setText(netSpeed);
+        tv_real_time_net_speed.setText(netSpeed);
         if (isNet) {
-
             tv_netspeed.setText("缓冲中..." + netSpeed);
             tv_loading_netspeed.setText("玩命加载中..." + netSpeed);
+        }
+    }
+
+    //缓冲监听卡
+    private void systemBufferListener() {
+        if (isUseSystem) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                video_view.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                    @Override
+                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                        switch (what) {
+                            case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+                                ll_buffer.setVisibility(View.VISIBLE);
+                                break;
+                            case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+                                ll_buffer.setVisibility(View.GONE);
+                                break;
+                        }
+                        return false;
+                    }
+                });
+            }
         }
     }
 
@@ -188,13 +301,22 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
         }
     }
 
+    //缓冲进度条
+    private void systemBufferingUpdateProgress(MediaPlayer mp) {
+        mp.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+            @Override
+            public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                int secondaryProgress = videoDuration * percent / 100;
+                sbVideo.setSecondaryProgress(secondaryProgress);
+            }
+        });
+    }
+    private void bufferingUpdateProgress() {
+        int bufferPercentage = video_view.getBufferPercentage();
+        int percent = sbVideo.getMax() * bufferPercentage / 100;
+        sbVideo.setSecondaryProgress(percent);
+    }
 
-    //    private void updataSecondaryProgress() {
-//        int bufferPercentage = video_view.getBufferPercentage();
-//        int percent=sbVideo.getMax()*bufferPercentage/100;
-//        sbVideo.setSecondaryProgress(percent);
-//        Log.i("TAG", "setSecondaryProgress"+bufferPercentage+"="+percent);
-//    }
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -205,29 +327,22 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
     }
 
     @Override
+    protected void onDestroy() {
+        close();
+        super.onDestroy();
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_UP:
-                Log.i("TAG", "ACTION_UP");
+
                 break;
         }
         gestureDetector.onTouchEvent(event);
         return super.onTouchEvent(event);
     }
 
-    @Override
-    protected void onDestroy() {
-        Log.i("TAG", "systemplay onDestroy");
-        handler.removeCallbacksAndMessages(null);
-        if (batteryChangedReceiver != null) {
-            unregisterReceiver(batteryChangedReceiver);
-            batteryChangedReceiver = null;
-        }
-        if (video_view != null) {
-            video_view.stopPlayback();
-        }
-        super.onDestroy();
-    }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
@@ -263,7 +378,7 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
         tv_name = (TextView) findViewById(R.id.tv_name);
         iv_battery = (ImageView) findViewById(R.id.iv_battery);
         tv_battery = (TextView) findViewById(R.id.tv_battery);
-        tv_systemTime = (TextView) findViewById(R.id.tv_systemtime);
+        tv_system_time = (TextView) findViewById(R.id.tv_system_time);
         sb_voice = (SeekBar) findViewById(R.id.sb_voice);
 
         tvCurrentTime = (TextView) findViewById(R.id.tv_current_time);
@@ -273,10 +388,9 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
         btn_next = findViewById(R.id.btn_next);
         btn_full_screen = findViewById(R.id.btn_full_screen);
         btn_voice = findViewById(R.id.btn_voice);
-        tv_real_time_net = findViewById(R.id.tv_real_time_net);
+        tv_real_time_net_speed = findViewById(R.id.tv_real_time_net_speed);
 
         media_controller = findViewById(R.id.media_controller);
-        system_videoplay = findViewById(R.id.system_videoplay);
 
         ll_buffer = findViewById(R.id.ll_buffer);
         tv_netspeed = findViewById(R.id.tv_netspeed);
@@ -333,58 +447,13 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
     //播放本地视频
     private void initLocalVideo() {
 
-        //设置有进度条可以拖动快进
-//        MediaController localMediaController = new MediaController(this);
-//        video_view.setMediaController(localMediaController);
-
-        if (isUseSystem) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                video_view.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-                    @Override
-                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
-                        switch (what) {
-                            case MediaPlayer.MEDIA_INFO_BUFFERING_START:
-                                ll_buffer.setVisibility(View.VISIBLE);
-                                Log.i("TAG", "MEDIA_INFO_BUFFERING_START");
-                                break;
-                            case MediaPlayer.MEDIA_INFO_BUFFERING_END:
-                                ll_buffer.setVisibility(View.GONE);
-                                Log.i("TAG", "MEDIA_INFO_BUFFERING_END");
-                                break;
-                        }
-                        return false;
-                    }
-                });
-            }
-        }
         video_view.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
-
-                mp.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-                    @Override
-                    public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                        int secondaryProgress = videoDuration * percent / 100;
-                        sbVideo.setSecondaryProgress(secondaryProgress);
-                    }
-                });
-                mp.setOnSeekCompleteListener(new MediaPlayer.OnSeekCompleteListener() {
-                    @Override
-                    public void onSeekComplete(MediaPlayer mp) {
-
-                    }
-                });
-//                mp.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-//                    @Override
-//                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
-//                        return false;
-//                    }
-//                });
-
                 video_view.start();
-
                 mVideoHeight = mp.getVideoHeight();
                 mVideoWidth = mp.getVideoWidth();
+
                 setFullScreen(false);
 
                 HandlerMediaControllerShowAndHide(1);
@@ -403,12 +472,7 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
         video_view.setOnErrorListener(new MediaPlayer.OnErrorListener() {
             @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
-                Log.i("TAG", "onError: MediaPlayer" + "what=" + what + "extra=" + extra);
-                switch (extra) {
-
-                }
                 startVitamioVideoPlay();
-
                 return true;
             }
         });
@@ -522,11 +586,6 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
                 }).setNegativeButton("取消", null).show();
     }
 
-    private String getSystemtime() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-//        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT+8"));
-        return simpleDateFormat.format(new Date());
-    }
 
     private void getScreenSize() {
         DisplayMetrics outMetrics = new DisplayMetrics();
@@ -535,19 +594,6 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
         screenHeight = outMetrics.heightPixels;
     }
 
-    public String getNetSpeed() {
-        long nowTotalRxBytes = getTotalRxBytes(getApplicationInfo().uid);
-        long nowTimeStamp = System.currentTimeMillis();
-        long speed = ((nowTotalRxBytes - lastTotalRxBytes) * 1000 / (nowTimeStamp - lastTimeStamp));//毫秒转换
-        lastTimeStamp = nowTimeStamp;
-        lastTotalRxBytes = nowTotalRxBytes;
-        return String.valueOf(speed) + " kb/s";
-    }
-
-    //getApplicationInfo().uid
-    public long getTotalRxBytes(int uid) {
-        return TrafficStats.getUidRxBytes(uid) == TrafficStats.UNSUPPORTED ? 0 : (TrafficStats.getTotalRxBytes() / 1024);//转为KB
-    }
 
     private void setGestureDetector() {
         gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
@@ -672,38 +718,6 @@ public class BaseVideoPlayer extends Activity implements View.OnClickListener {
         }
     }
 
-
-    private void registerBatteryReceiver() {
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        batteryChangedReceiver = new BatteryChangedReceiver(new BatteryChanged());
-        registerReceiver(batteryChangedReceiver, intentFilter);
-    }
-
-    private class BatteryChanged implements IBatteryChanged {
-        @Override
-        public void setBattery(int batteryLevel) {
-            if (tv_battery != null) {
-                tv_battery.setText(batteryLevel + "%");
-            }
-            if (iv_battery != null) {
-                ImageView view = iv_battery;
-                if (batteryLevel <= 10) {
-                    view.setImageResource(R.drawable.ic_battery_10);
-                } else if (batteryLevel <= 20) {
-                    view.setImageResource(R.drawable.ic_battery_20);
-                } else if (batteryLevel <= 40) {
-                    view.setImageResource(R.drawable.ic_battery_40);
-                } else if (batteryLevel <= 60) {
-                    view.setImageResource(R.drawable.ic_battery_60);
-                } else if (batteryLevel <= 80) {
-                    view.setImageResource(R.drawable.ic_battery_80);
-                } else if (batteryLevel >= 100) {
-                    view.setImageResource(R.drawable.ic_battery_100);
-                }
-            }
-        }
-    }
 
     private void setAudio() {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);

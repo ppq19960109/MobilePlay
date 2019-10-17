@@ -258,7 +258,7 @@ public class VitamioVideoPlayer extends Activity implements View.OnClickListener
         tvName = (TextView) findViewById(R.id.tv_name);
         ivBattery = (ImageView) findViewById(R.id.iv_battery);
         tv_battery = (TextView) findViewById(R.id.tv_battery);
-        tvSystemTime = (TextView) findViewById(R.id.tv_systemtime);
+        tvSystemTime = (TextView) findViewById(R.id.tv_system_time);
         sbVoice = (SeekBar) findViewById(R.id.sb_voice);
 
         tvCurrentTime = (TextView) findViewById(R.id.tv_current_time);
@@ -268,7 +268,7 @@ public class VitamioVideoPlayer extends Activity implements View.OnClickListener
         btn_next = findViewById(R.id.btn_next);
         btn_full_screen = findViewById(R.id.btn_full_screen);
         btn_voice = findViewById(R.id.btn_voice);
-        tv_real_time_net = findViewById(R.id.tv_real_time_net);
+        tv_real_time_net = findViewById(R.id.tv_real_time_net_speed);
 
         media_controller = findViewById(R.id.media_controller);
         system_videoplay = findViewById(R.id.system_videoplay);
@@ -367,12 +367,12 @@ public class VitamioVideoPlayer extends Activity implements View.OnClickListener
 
                     }
                 });
-//                mp.setOnInfoListener(new MediaPlayer.OnInfoListener() {
-//                    @Override
-//                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
-//                        return false;
-//                    }
-//                });
+                mp.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                    @Override
+                    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                        return false;
+                    }
+                });
 
                 video_view.start();
 
