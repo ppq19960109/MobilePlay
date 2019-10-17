@@ -5,44 +5,32 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
-
-import android.graphics.Bitmap;
-import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
-import android.text.format.Formatter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.mobileplay.R;
 import com.mobileplay.activity.SystemVideoPlayer;
 import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.base.BasePager;
-import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.MediaItem;
 
-
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.TimeZone;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 public class VideoPager extends BasePager {
+    private final int GET_MEDIA = 1;
 
     private ListView listview;
     private TextView tv_nomedia;
@@ -50,41 +38,75 @@ public class VideoPager extends BasePager {
 
     private ArrayList<MediaItem> mediaItems = new ArrayList<>();
 
-    private Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            switch (msg.what) {
-                case 1:
-                    if (mediaItems != null && mediaItems.size() > 0) {
-                        VideoAdapter videoAdapter = new VideoAdapter(getContext(), mediaItems);
-                        listview.setAdapter(videoAdapter);
-                    } else {
-                        tv_nomedia.setVisibility(View.VISIBLE);
-                    }
-                    pb_load.setVisibility(View.GONE);
-                    break;
-            }
+    private Handler handler = new MyHandler(this);
+
+    @Override
+    public void mHandleMessage(Message msg) {
+        switch (msg.what) {
+            case GET_MEDIA:
+                if (mediaItems != null && mediaItems.size() > 0) {
+                    VideoAdapter videoAdapter = new VideoAdapter(getContext(), mediaItems);
+                    listview.setAdapter(videoAdapter);
+                } else {
+                    tv_nomedia.setVisibility(View.VISIBLE);
+                }
+                pb_load.setVisibility(View.GONE);
+                break;
         }
-    };
+    }
+
+
     public VideoPager() {
 
     }
+
     public VideoPager(Context context) {
         super(context);
     }
 
-    @Override
-    public View initRootView() {
+    public void initView(View view) {
+        listview = view.findViewById(R.id.listview);
+        tv_nomedia = view.findViewById(R.id.tv_nomedia);
+        pb_load = view.findViewById(R.id.pb_load);
+    }
 
-        return null;
+    public void initListener() {
+        setListViewListener();
     }
 
     @Override
     public void initData() {
         super.initData();
         getDataFromLocal();
+    }
 
+    @Override
+    public void close() {
+        handler.removeCallbacksAndMessages(null);
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_video, null);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        initView(view);
+        initListener();
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        initData();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     private void getDataFromLocal() {
@@ -94,7 +116,7 @@ public class VideoPager extends BasePager {
             public void run() {
                 super.run();
                 Uri videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-                ContentResolver contentResolver =getContext() .getContentResolver();
+                ContentResolver contentResolver = getContext().getContentResolver();
                 String[] objs = {
                         MediaStore.Video.Media.DISPLAY_NAME,
                         MediaStore.Video.Media.DURATION,
@@ -117,56 +139,12 @@ public class VideoPager extends BasePager {
                         mediaItem.setData(data);
                         String artist = query.getString(4);
                         mediaItem.setArtist(artist);
-
-//                        mediaItem.setBitmap(getVideoThumbnail(data));
                     }
                     query.close();
                 }
-
-                handler.sendEmptyMessage(1);
+                handler.sendEmptyMessage(GET_MEDIA);
             }
         }.start();
-    }
-    // 获取视频缩略图
-    public Bitmap getVideoThumbnail(String filePath) {
-        Bitmap b=null;
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        try {
-            retriever.setDataSource(filePath);
-            b=retriever.getFrameAtTime();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-
-        } finally {
-            try {
-                retriever.release();
-            } catch (RuntimeException e) {
-                e.printStackTrace();
-            }
-        }
-        return b;
-    }
-
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_video, null);
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        Context context1 = getContext();
-        Log.i("TAG", "onAttach: "+context1);
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        initData();
-        setListViewListener();
     }
 
     private void setListViewListener() {
@@ -174,44 +152,21 @@ public class VideoPager extends BasePager {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 MediaItem item = (MediaItem) parent.getItemAtPosition(position);
-//                CommonUtils.showToastMsg(null,item.getData()+"="+Uri.parse(item.getData()));
                 if (item != null) {
 //                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
 //                    intent.setData(Uri.parse(item.getData()));
-//                    getContext().startActivity(intent);/
+//                    getContext().startActivity(intent);
 
                     Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable("VideoList",mediaItems);
+                    bundle.putSerializable("VideoList", mediaItems);
                     intent.putExtras(bundle);
-                    intent.putExtra("position",position);
+                    intent.putExtra("position", position);
                     getContext().startActivity(intent);
                 }
-
             }
 
         });
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        listview = view.findViewById(R.id.listview);
-        tv_nomedia = view.findViewById(R.id.tv_nomedia);
-        pb_load = view.findViewById(R.id.pb_load);
-
-
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Log.i("TAG","fragment onConfigurationChanged");
-    }
 }

@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.media.AudioManager;
-
 import android.net.TrafficStats;
 import android.net.Uri;
 import android.os.Build;
@@ -33,10 +32,9 @@ import androidx.annotation.Nullable;
 
 import com.mobileplay.R;
 import com.mobileplay.Receiver.BatteryChangedReceiver;
-import com.mobileplay.Receiver.VideoPlayer;
+import com.mobileplay.Receiver.IBatteryChanged;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.view.vitamio.VideoView;
-
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -50,7 +48,7 @@ import io.vov.vitamio.MediaPlayer;
 import io.vov.vitamio.Vitamio;
 
 
-public class VitamioVideoPlayer extends Activity implements View.OnClickListener, VideoPlayer {
+public class VitamioVideoPlayer extends Activity implements View.OnClickListener, IBatteryChanged {
     private VideoView video_view;
     private LinearLayout llTop;
     private TextView tvName;
@@ -256,13 +254,13 @@ public class VitamioVideoPlayer extends Activity implements View.OnClickListener
 
     private void initView() {
         video_view = (VideoView) findViewById(R.id.video_view);
-        llTop = (LinearLayout) findViewById(R.id.ll_top);
+
         tvName = (TextView) findViewById(R.id.tv_name);
         ivBattery = (ImageView) findViewById(R.id.iv_battery);
         tv_battery = (TextView) findViewById(R.id.tv_battery);
-        tvSystemTime = (TextView) findViewById(R.id.tv_system_time);
+        tvSystemTime = (TextView) findViewById(R.id.tv_systemtime);
         sbVoice = (SeekBar) findViewById(R.id.sb_voice);
-        llBottom = (LinearLayout) findViewById(R.id.ll_bottom);
+
         tvCurrentTime = (TextView) findViewById(R.id.tv_current_time);
         sbVideo = (SeekBar) findViewById(R.id.sb_video);
         tvDuration = (TextView) findViewById(R.id.tv_duration);

@@ -13,16 +13,21 @@ import com.mobileplay.doamain.MediaItem;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public class VideoAdapter extends BaseAdapter {
 
-    private  ArrayList<MediaItem> mediaItems;
-    private  Context context;
+    private Context context;
+    private ArrayList<MediaItem> mediaItems;
+    SimpleDateFormat formatter;
 
-    public VideoAdapter(Context context, ArrayList<MediaItem> mediaItems){
-        this.context=context;
-        this.mediaItems=mediaItems;
+    public VideoAdapter(Context context, ArrayList<MediaItem> mediaItems) {
+        this.context = context;
+        this.mediaItems = mediaItems;
+
+        formatter = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 
     @Override
@@ -56,21 +61,19 @@ public class VideoAdapter extends BaseAdapter {
         }
         MediaItem mediaItem = mediaItems.get(position);
 
-//        videoHolder.iv_icon.setImageBitmap(mediaItem.getBitmap());
         videoHolder.tv_name.setText(mediaItem.getName());
         videoHolder.tv_size.setText(Formatter.formatFileSize(context, mediaItem.getSize()));
 
-        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-        formatter.setTimeZone(TimeZone.getTimeZone("GMT"));
         videoHolder.tv_time.setText(formatter.format(mediaItem.getDuration()));
+
         return convertView;
     }
 
-
-     class VideoHolder {
+    private class VideoHolder {
         ImageView iv_icon;
         TextView tv_name;
         TextView tv_time;
         TextView tv_size;
     }
+
 }

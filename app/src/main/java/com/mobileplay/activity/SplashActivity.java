@@ -1,17 +1,18 @@
 package com.mobileplay.activity;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.MotionEvent;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.mobileplay.R;
 
 public class SplashActivity extends AppCompatActivity {
 
-    private Handler handler=new Handler();
+    private Handler handler = new Handler();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,6 +28,16 @@ public class SplashActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        close();
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        startMainActivity();
+        return super.onTouchEvent(event);
+    }
+
+    public void close() {
         handler.removeCallbacksAndMessages(null);
     }
 
@@ -34,11 +45,5 @@ public class SplashActivity extends AppCompatActivity {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
         finish();
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        startMainActivity();
-        return super.onTouchEvent(event);
     }
 }

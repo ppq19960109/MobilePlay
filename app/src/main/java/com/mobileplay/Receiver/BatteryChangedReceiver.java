@@ -6,10 +6,10 @@ import android.content.Intent;
 import android.os.BatteryManager;
 
 public class BatteryChangedReceiver extends BroadcastReceiver {
-    private VideoPlayer videoPlayer;
+    private IBatteryChanged batteryChanged;
 
-    public BatteryChangedReceiver(VideoPlayer systemVideoPlayer) {
-        videoPlayer=systemVideoPlayer;
+    public BatteryChangedReceiver(IBatteryChanged batteryChanged) {
+        this.batteryChanged=batteryChanged;
     }
 
     @Override
@@ -17,8 +17,8 @@ public class BatteryChangedReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         switch (action) {
             case Intent.ACTION_BATTERY_CHANGED:
-                int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
-                videoPlayer.setBattery(level);
+                int batteryLevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+                batteryChanged.setBattery(batteryLevel);
                 break;
         }
     }

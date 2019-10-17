@@ -4,7 +4,6 @@
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:id="@+id/ll_top"
         android:orientation="vertical"
         android:layout_alignParentTop="true"
         android:layout_width="match_parent"
@@ -47,7 +46,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
             <TextView
-                android:id="@+id/tv_system_time"
+                android:id="@+id/tv_systemtime"
                 android:text="12:25"
                 android:textColor="#ffffff"
                 android:layout_marginLeft="8dp"
@@ -88,7 +87,6 @@
         </LinearLayout>
     </LinearLayout>
     <LinearLayout
-        android:id="@+id/ll_bottom"
         android:orientation="vertical"
         android:layout_alignParentBottom="true"
         android:gravity="center"

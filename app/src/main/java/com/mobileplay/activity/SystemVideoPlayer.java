@@ -29,14 +29,13 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 
 import com.mobileplay.R;
 import com.mobileplay.Receiver.BatteryChangedReceiver;
-import com.mobileplay.Receiver.VideoPlayer;
+import com.mobileplay.Receiver.IBatteryChanged;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.view.VideoView;
-
-import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -47,7 +46,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 
-public class SystemVideoPlayer extends Activity implements View.OnClickListener, VideoPlayer {
+public class SystemVideoPlayer extends Activity implements View.OnClickListener, IBatteryChanged {
+
     private VideoView video_view;
     private LinearLayout llTop;
     private TextView tvName;
@@ -65,6 +65,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private Button btn_pre;
     private Button btn_full_screen;
     private Button btn_voice;
+
+    private View ll_buffer;
+    private TextView tv_netspeed;
+    private View ll_loading;
+    private TextView tv_loading_netspeed;
 
     private BatteryChangedReceiver batteryChangedReceiver;
 
@@ -93,11 +98,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
     private int videoDuration;
 
-    private View ll_buffer;
-    private TextView tv_netspeed;
-    private View ll_loading;
-    private TextView tv_loading_netspeed;
-
     private boolean isNet;
     private boolean isUseSystem = true;
     private int preCurrentPosition;
@@ -107,10 +107,12 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     private long lastTimeStamp;
     private TextView tv_real_time_net;
 
+    private Handler handler = new MyHandler(this);
+
     private static class MyHandler extends Handler {
         private WeakReference<Activity> mWeakReference;
 
-        public MyHandler(Activity activity) {
+        private MyHandler(Activity activity) {
             mWeakReference = new WeakReference<>(activity);
         }
 
@@ -130,7 +132,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
                     mActivity.bufferListener(currentPosition);
 
-
                     removeMessages(1);
                     sendEmptyMessageDelayed(1, 1000);
                     break;
@@ -145,8 +146,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
                     break;
             }
         }
-
-
     }
 
     private void setNetSpeed() {
@@ -180,7 +179,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
         }
     }
 
-    private Handler handler = new MyHandler(this);
+
 
     //    private void updataSecondaryProgress() {
 //        int bufferPercentage = video_view.getBufferPercentage();
@@ -192,13 +191,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_system_videoplayer);
-//        if (!LibsChecker.checkVitamioLibs(this)) {
-//            return;
-//        }
-//        Log.i("TAG", "Vitamio");
-//        if (Vitamio.isInitialized(this)) {
-//            Log.i("TAG", "Vitamio isInitialized");
-//        }
+
         initView();
         initData();
         initLocalVideo();
@@ -259,13 +252,13 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener,
 
     private void initView() {
         video_view = (VideoView) findViewById(R.id.video_view);
-        llTop = (LinearLayout) findViewById(R.id.ll_top);
+
         tvName = (TextView) findViewById(R.id.tv_name);
         ivBattery = (ImageView) findViewById(R.id.iv_battery);
         tv_battery = (TextView) findViewById(R.id.tv_battery);
-        tvSystemTime = (TextView) findViewById(R.id.tv_system_time);
+        tvSystemTime = (TextView) findViewById(R.id.tv_systemtime);
         sbVoice = (SeekBar) findViewById(R.id.sb_voice);
-        llBottom = (LinearLayout) findViewById(R.id.ll_bottom);
+
         tvCurrentTime = (TextView) findViewById(R.id.tv_current_time);
         sbVideo = (SeekBar) findViewById(R.id.sb_video);
         tvDuration = (TextView) findViewById(R.id.tv_duration);
