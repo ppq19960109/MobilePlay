@@ -5,8 +5,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import com.mobileplay.base.BasePager;
-
 public class NetAudioPager extends BasePager {
     private final int GET_MEDIA = 1;
 

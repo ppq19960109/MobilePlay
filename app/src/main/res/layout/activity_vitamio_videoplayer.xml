@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <com.mobileplay.view.vitamio.VideoView
+    <com.mobileplay.MediaPlay.VideoPlay.vitamio.VideoView
         android:id="@+id/video_view"
         android:layout_centerInParent="true"
         android:layout_width="match_parent"

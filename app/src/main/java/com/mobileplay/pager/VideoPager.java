@@ -18,16 +18,15 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.mobileplay.R;
-import com.mobileplay.activity.SystemVideoPlayer;
+import com.mobileplay.MediaPlay.VideoPlay.system.SystemVideoPlayer;
 import com.mobileplay.adapter.VideoAdapter;
-import com.mobileplay.base.BasePager;
 import com.mobileplay.doamain.MediaItem;
 
 import java.util.ArrayList;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class VideoPager extends BasePager {
     private final int GET_MEDIA = 1;
@@ -153,7 +152,7 @@ public class VideoPager extends BasePager {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 MediaItem item = (MediaItem) parent.getItemAtPosition(position);
                 if (item != null) {
-//                    Intent intent = new Intent(getContext(), SystemVideoPlayer1.class);
+//                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
 //                    intent.setData(Uri.parse(item.getData()));
 //                    getContext().startActivity(intent);
 

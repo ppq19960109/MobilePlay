@@ -11,7 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.mobileplay.Interface.GetRequest_Interface;
+import com.mobileplay.Interface.IRetrofitRequest;
 import com.mobileplay.R;
 import com.mobileplay.doamain.NetMediaItem;
 
@@ -85,9 +85,9 @@ public class NetVideoAdapter extends BaseAdapter {
 //                .addConverterFactory(GsonConverterFactory.create()) //返回的数据经过转换工厂转换成我们想要的数据，最常用的就是Gson
                 .build();   //构建实例
 
-        GetRequest_Interface retrofitService = retrofit.create(GetRequest_Interface.class);
+        IRetrofitRequest retrofitService = retrofit.create(IRetrofitRequest.class);
 
-        Call<ResponseBody> call = retrofitService.getImg(url);
+        Call<ResponseBody> call = retrofitService.getNetVideoImage(url);
 
         call.enqueue(new Callback<ResponseBody>() {
             @Override

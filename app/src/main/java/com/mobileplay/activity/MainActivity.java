@@ -5,20 +5,20 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.RadioGroup;
 
-import androidx.annotation.Nullable;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-
 import com.mobileplay.R;
-import com.mobileplay.base.BasePager;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.pager.AudioPager;
+import com.mobileplay.pager.BasePager;
 import com.mobileplay.pager.NetAudioPager;
 import com.mobileplay.pager.NetVideoPager;
 import com.mobileplay.pager.VideoPager;
 
 import java.util.ArrayList;
+
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 public class MainActivity extends FragmentActivity {
 

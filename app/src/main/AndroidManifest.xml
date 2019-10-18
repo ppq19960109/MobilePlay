@@ -22,7 +22,7 @@
             android:launchMode="singleTop"
             android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity
-            android:name=".activity.SystemVideoPlayer"
+            android:name=".MediaPlay.VideoPlay.system.SystemVideoPlayer"
             android:label="@string/system_player_name"
             android:theme="@style/noAnimation_Theme"
             android:configChanges="keyboardHidden|orientation|screenSize" >
@@ -55,7 +55,7 @@
 
         </activity>
         <activity
-            android:name=".activity.VitamioVideoPlayer"
+            android:name=".MediaPlay.VideoPlay.vitamio.VitamioVideoPlayer"
             android:label="@string/vitamio_player_name"
             android:theme="@style/noAnimation_Theme"
             android:configChanges="keyboardHidden|orientation|screenSize" ></activity>

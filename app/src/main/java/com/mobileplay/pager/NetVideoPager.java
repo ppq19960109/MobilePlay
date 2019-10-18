@@ -15,22 +15,20 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-
-import com.mobileplay.Interface.GetRequest_Interface;
+import com.mobileplay.Interface.IRetrofitRequest;
 import com.mobileplay.R;
-import com.mobileplay.activity.SystemVideoPlayer1;
+import com.mobileplay.MediaPlay.VideoPlay.system.SystemVideoPlayer;
 import com.mobileplay.adapter.NetVideoAdapter;
-import com.mobileplay.base.BasePager;
-import com.mobileplay.common.CacheUtils;
+import com.mobileplay.MediaPlay.CacheUtils;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.NetMediaItem;
 import com.mobileplay.doamain.Trailers;
 
 import java.util.ArrayList;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -140,9 +138,9 @@ public class NetVideoPager extends BasePager {
                 .addConverterFactory(GsonConverterFactory.create()) //返回的数据经过转换工厂转换成我们想要的数据，最常用的就是Gson
                 .build();   //构建实例
 
-        GetRequest_Interface retrofitService = retrofit.create(GetRequest_Interface.class);
+        IRetrofitRequest retrofitService = retrofit.create(IRetrofitRequest.class);
 
-        Call<Trailers> call = retrofitService.getCall();
+        Call<Trailers> call = retrofitService.getNetVideoList();
 
         call.enqueue(new Callback<Trailers>() {
             @Override
@@ -166,11 +164,11 @@ public class NetVideoPager extends BasePager {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 NetMediaItem item = (NetMediaItem) parent.getItemAtPosition(position);
                 if (item != null) {
-//                    Intent intent = new Intent(getContext(), SystemVideoPlayer1.class);
+//                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
 //                    intent.setData(Uri.parse(item.getData()));
 //                    getContext().startActivity(intent);/
 
-                    Intent intent = new Intent(getContext(), SystemVideoPlayer1.class);
+                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
                     Bundle bundle = new Bundle();
                     bundle.putSerializable("VideoList", netMediaItems);
                     intent.putExtras(bundle);
