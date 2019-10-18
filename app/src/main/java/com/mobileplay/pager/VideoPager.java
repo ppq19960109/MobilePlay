@@ -153,7 +153,7 @@ public class VideoPager extends BasePager {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 MediaItem item = (MediaItem) parent.getItemAtPosition(position);
                 if (item != null) {
-//                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
+//                    Intent intent = new Intent(getContext(), SystemVideoPlayer1.class);
 //                    intent.setData(Uri.parse(item.getData()));
 //                    getContext().startActivity(intent);
 

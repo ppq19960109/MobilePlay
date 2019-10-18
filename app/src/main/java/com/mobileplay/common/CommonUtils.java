@@ -49,6 +49,17 @@ public class CommonUtils {
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
     }
 
+    public static boolean isNetUri(String uri) {
+        if (uri == null) {
+            return false;
+        }
+        if (uri.toLowerCase().startsWith("http") || uri.toLowerCase().startsWith("https")
+                || uri.toLowerCase().startsWith("rtsp") || uri.toLowerCase().startsWith("mms")) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * 解决安卓6.0以上版本不能读取外部存储权限的问题
      *

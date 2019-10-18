@@ -21,7 +21,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.mobileplay.Interface.GetRequest_Interface;
 import com.mobileplay.R;
-import com.mobileplay.activity.SystemVideoPlayer;
+import com.mobileplay.activity.SystemVideoPlayer1;
 import com.mobileplay.adapter.NetVideoAdapter;
 import com.mobileplay.base.BasePager;
 import com.mobileplay.common.CacheUtils;
@@ -166,11 +166,11 @@ public class NetVideoPager extends BasePager {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 NetMediaItem item = (NetMediaItem) parent.getItemAtPosition(position);
                 if (item != null) {
-//                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
+//                    Intent intent = new Intent(getContext(), SystemVideoPlayer1.class);
 //                    intent.setData(Uri.parse(item.getData()));
 //                    getContext().startActivity(intent);/
 
-                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
+                    Intent intent = new Intent(getContext(), SystemVideoPlayer1.class);
                     Bundle bundle = new Bundle();
                     bundle.putSerializable("VideoList", netMediaItems);
                     intent.putExtras(bundle);

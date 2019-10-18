@@ -500,7 +500,7 @@ public class VitamioVideoPlayer extends Activity implements View.OnClickListener
     }
 
     private void startSystemVideoPlay() {
-        Intent intent = new Intent(this, SystemVideoPlayer.class);
+        Intent intent = new Intent(this, SystemVideoPlayer1.class);
         if (mediaItems == null) {
             intent.setData(uri);
         } else {
