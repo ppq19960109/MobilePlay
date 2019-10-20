@@ -22,7 +22,7 @@
             android:launchMode="singleTop"
             android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity
-            android:name=".MediaPlay.VideoPlay.system.SystemVideoPlayer"
+            android:name=".mediaPlay.VideoPlay.system.SystemVideoPlayer"
             android:label="@string/system_player_name"
             android:theme="@style/noAnimation_Theme"
             android:configChanges="keyboardHidden|orientation|screenSize" >
@@ -55,7 +55,7 @@
 
         </activity>
         <activity
-            android:name=".MediaPlay.VideoPlay.vitamio.VitamioVideoPlayer"
+            android:name=".mediaPlay.VideoPlay.vitamio.VitamioVideoPlayer"
             android:label="@string/vitamio_player_name"
             android:theme="@style/noAnimation_Theme"
             android:configChanges="keyboardHidden|orientation|screenSize" ></activity>
@@ -65,6 +65,7 @@
             android:launchMode="singleTop"
             android:theme="@android:style/Theme.NoTitleBar"
             android:windowSoftInputMode="stateAlwaysHidden" />
+        <activity android:name=".mediaPlay.AudioPlayer"/>
     </application>
 <!--    android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"-->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

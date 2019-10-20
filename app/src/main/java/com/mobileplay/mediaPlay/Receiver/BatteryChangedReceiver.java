@@ -1,4 +1,4 @@
-package com.mobileplay.MediaPlay.Receiver;
+package com.mobileplay.mediaPlay.Receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

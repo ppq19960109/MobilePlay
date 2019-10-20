@@ -17,9 +17,9 @@ import android.widget.TextView;
 
 import com.mobileplay.Interface.IRetrofitRequest;
 import com.mobileplay.R;
-import com.mobileplay.MediaPlay.VideoPlay.system.SystemVideoPlayer;
+import com.mobileplay.mediaPlay.VideoPlay.system.SystemVideoPlayer;
 import com.mobileplay.adapter.NetVideoAdapter;
-import com.mobileplay.MediaPlay.CacheUtils;
+import com.mobileplay.mediaPlay.CacheUtils;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.NetMediaItem;
 import com.mobileplay.doamain.Trailers;

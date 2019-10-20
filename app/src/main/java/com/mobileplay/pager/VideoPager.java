@@ -18,17 +18,19 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.mobileplay.mediaPlay.VideoPlay.system.SystemVideoPlayer;
 import com.mobileplay.R;
-import com.mobileplay.MediaPlay.VideoPlay.system.SystemVideoPlayer;
 import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.doamain.MediaItem;
 
 import java.util.ArrayList;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 public class VideoPager extends BasePager {
+    private final String MEDIA_LIST = "VideoList";
+    private final String MEDIA_POSITION = "position";
     private final int GET_MEDIA = 1;
 
     private ListView listview;
@@ -158,9 +160,9 @@ public class VideoPager extends BasePager {
 
                     Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable("VideoList", mediaItems);
+                    bundle.putSerializable(MEDIA_LIST, mediaItems);
                     intent.putExtras(bundle);
-                    intent.putExtra("position", position);
+                    intent.putExtra(MEDIA_POSITION, position);
                     getContext().startActivity(intent);
                 }
             }

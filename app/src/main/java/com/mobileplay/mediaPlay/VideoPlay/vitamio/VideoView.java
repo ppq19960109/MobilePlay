@@ -1,11 +1,11 @@
-package com.mobileplay.MediaPlay.VideoPlay.system;
+package com.mobileplay.mediaPlay.VideoPlay.vitamio;
 
 
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.ViewGroup;
 
-public class VideoView extends android.widget.VideoView {
+public class VideoView extends io.vov.vitamio.widget.VideoView{
     public VideoView(Context context) {
         this(context,null);
     }
@@ -21,7 +21,7 @@ public class VideoView extends android.widget.VideoView {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+//        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
     }
 

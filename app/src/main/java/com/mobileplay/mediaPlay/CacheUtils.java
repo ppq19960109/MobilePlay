@@ -1,4 +1,4 @@
-package com.mobileplay.MediaPlay;
+package com.mobileplay.mediaPlay;
 
 import android.content.Context;
 import android.content.SharedPreferences;

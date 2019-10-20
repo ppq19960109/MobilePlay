@@ -1,4 +1,4 @@
-package com.mobileplay.MediaPlay.VideoPlay.system;
+package com.mobileplay.mediaPlay.VideoPlay.vitamio;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,11 +26,11 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.mobileplay.MediaPlay.MediaPlayerUtils;
+import com.mobileplay.mediaPlay.MediaPlayerUtils;
+import com.mobileplay.mediaPlay.VideoPlay.system.SystemVideoPlayer;
 import com.mobileplay.R;
-import com.mobileplay.MediaPlay.Receiver.BatteryChangedReceiver;
+import com.mobileplay.mediaPlay.Receiver.BatteryChangedReceiver;
 import com.mobileplay.Interface.IBatteryChanged;
-import com.mobileplay.MediaPlay.VideoPlay.vitamio.VitamioVideoPlayer;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.MediaItem;
 
@@ -44,12 +43,14 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import androidx.annotation.Nullable;
+import io.vov.vitamio.MediaPlayer;
+import io.vov.vitamio.Vitamio;
 
 
-public class SystemVideoPlayer extends Activity implements View.OnClickListener {
+public class VitamioVideoPlayer extends Activity implements View.OnClickListener {
 
-    private final String MEDIA_LIST = "VideoList";
-    private final String MEDIA_POSITION = "position";
+    private final  String MEDIA_LIST="VideoList";
+    private final  String MEDIA_POSITION="position";
     /**
      * VideoPlayer
      */
@@ -96,7 +97,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     /**
      * 电池
      */
-    private BatteryChangedReceiver batteryChangedReceiver;
+    private  BatteryChangedReceiver batteryChangedReceiver;
     /**
      * 视频信息
      */
@@ -152,7 +153,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            SystemVideoPlayer mReference = (SystemVideoPlayer) mWeakReference.get();
+            VitamioVideoPlayer mReference = (VitamioVideoPlayer) mWeakReference.get();
             mReference.mHandleMessage(msg);
         }
     }
@@ -186,12 +187,11 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
      */
     private void setVideoProgress() {
         currentVideoPosition = video_view.getCurrentPosition();
-        sbVideo.setProgress((int) (currentVideoPosition));
+        sbVideo.setProgress((int)(currentVideoPosition));
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         tvCurrentTime.setText(simpleDateFormat.format(currentVideoPosition));
     }
-
     /**
      * media_controller
      */
@@ -222,7 +222,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         }
         setMediaControllerVisibility(isMediaControllerVisibility);
     }
-
     //上一半
     private void setSystemtime() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
@@ -231,7 +230,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     }
 
     //电池
-    private void registerBatteryReceiver() {
+    private  void registerBatteryReceiver() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
         batteryChangedReceiver = new BatteryChangedReceiver(new BatteryChanged());
@@ -262,8 +261,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             }
         }
     }
-
-    //调音
+   //调音
     private void setAudio() {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -315,7 +313,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     }
 
     private void setVoiceBackground() {
-        if (getCurrentVolume() == 0 || isMute == true) {
+        if (getCurrentVolume() == 0||isMute==true) {
             isMute = true;
             btn_voice.setBackgroundResource(R.drawable.btn_voice_mute_selector);
         } else {
@@ -384,7 +382,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             @Override
             public void onBufferingUpdate(MediaPlayer mp, int percent) {
                 long secondaryProgress = videoDuration * percent / 100;
-                sbVideo.setSecondaryProgress((int) (secondaryProgress));
+                sbVideo.setSecondaryProgress((int)(secondaryProgress));
             }
         });
     }
@@ -406,6 +404,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         }
     }
 
+
+
     @Override
     protected void onDestroy() {
         close();
@@ -422,7 +422,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         gestureDetector.onTouchEvent(event);
         return super.onTouchEvent(event);
     }
-
     private void setGestureDetector() {
         gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
@@ -654,7 +653,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
                 setFullScreen(false);
 
                 videoDuration = mp.getDuration();
-                sbVideo.setMax((int) (videoDuration));
+                sbVideo.setMax((int)(videoDuration));
 
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -682,7 +681,6 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
             }
         });
     }
-
 
     @Override
     public void onClick(View view) {
@@ -834,7 +832,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_system_videoplayer);
+        setContentView(R.layout.activity_vitamio_videoplayer);
+        Vitamio.isInitialized(this);
         initView();
         initListener();
         initData();
@@ -843,7 +842,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     }
 
     private void showSwitchDialog() {
-        new AlertDialog.Builder(this).setMessage("切换万能播放器？").setTitle("提示").
+        new AlertDialog.Builder(this).setMessage("切换系统播放器？").setTitle("提示").
                 setPositiveButton("确定", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         startSwitchVideoPlay();
@@ -852,7 +851,7 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
     }
 
     private void startSwitchVideoPlay() {
-        Intent intent = new Intent(this, VitamioVideoPlayer.class);
+        Intent intent = new Intent(this, SystemVideoPlayer.class);
         if (mediaItems != null && mediaItems.size() > 0) {
             Bundle bundle = new Bundle();
             bundle.putSerializable(MEDIA_LIST, mediaItems);
@@ -864,6 +863,5 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         startActivity(intent);
         finish();
     }
-
 
 }
