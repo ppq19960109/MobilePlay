@@ -18,19 +18,19 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.mobileplay.mediaPlay.AudioPlayer;
 import com.mobileplay.R;
 import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.doamain.MediaItem;
+import com.mobileplay.mediaPlay.AudioPlayer;
 
 import java.util.ArrayList;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 public class AudioPager extends BasePager {
 
-    private final String MEDIA_LIST = "VideoList";
+    private final String MEDIA_LIST = "AudioList";
     private final String MEDIA_POSITION = "position";
     private final int GET_MEDIA = 1;
 

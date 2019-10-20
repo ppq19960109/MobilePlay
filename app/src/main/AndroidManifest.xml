@@ -66,6 +66,14 @@
             android:theme="@android:style/Theme.NoTitleBar"
             android:windowSoftInputMode="stateAlwaysHidden" />
         <activity android:name=".mediaPlay.AudioPlayer"/>
+        <service android:name=".service.MusicService"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.mobileplay.service.action"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </service>
     </application>
 <!--    android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"-->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

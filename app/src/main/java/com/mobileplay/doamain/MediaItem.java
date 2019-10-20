@@ -1,10 +1,11 @@
 package com.mobileplay.doamain;
 
-import android.graphics.Bitmap;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import java.io.Serializable;
 
-public class MediaItem implements Serializable {
+public class MediaItem implements Serializable, Parcelable {
     private String name;
     private long duration;
     private long size;
@@ -62,4 +63,41 @@ public class MediaItem implements Serializable {
                 ", artist='" + artist + '\'' +
                 '}';
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.name);
+        dest.writeLong(this.duration);
+        dest.writeLong(this.size);
+        dest.writeString(this.data);
+        dest.writeString(this.artist);
+    }
+
+    public MediaItem() {
+    }
+
+    protected MediaItem(Parcel in) {
+        this.name = in.readString();
+        this.duration = in.readLong();
+        this.size = in.readLong();
+        this.data = in.readString();
+        this.artist = in.readString();
+    }
+
+    public static final Parcelable.Creator<MediaItem> CREATOR = new Parcelable.Creator<MediaItem>() {
+        @Override
+        public MediaItem createFromParcel(Parcel source) {
+            return new MediaItem(source);
+        }
+
+        @Override
+        public MediaItem[] newArray(int size) {
+            return new MediaItem[size];
+        }
+    };
 }
