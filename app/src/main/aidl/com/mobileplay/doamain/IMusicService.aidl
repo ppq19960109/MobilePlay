@@ -1,6 +1,7 @@
 // IMusicService.aidl
 package com.mobileplay.doamain;
 import com.mobileplay.doamain.MediaItem;
+import com.mobileplay.aidl.AudioMediaController;
 // Declare any non-default types here with import statements
 
 interface IMusicService {
@@ -10,8 +11,11 @@ interface IMusicService {
      */
 //    void basicTypes(int anInt, long aLong, boolean aBoolean, float aFloat,
 //            double aDouble, String aString);
-           List<MediaItem> getMediaList();
 
+           List<MediaItem> getMediaList();
            void setMediaList(inout List<MediaItem> mediaItems);
-            void setMediaPosition(in int position);
+
+           void setMediaPosition(in int position);
+
+           AudioMediaController getAudioMediaController();
 }

@@ -8,7 +8,9 @@ import android.content.ServiceConnection;
 import android.graphics.drawable.AnimationDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
@@ -18,11 +20,16 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.mobileplay.R;
+import com.mobileplay.aidl.AudioMediaController;
 import com.mobileplay.doamain.IMusicService;
 import com.mobileplay.doamain.MediaItem;
 
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import androidx.annotation.Nullable;
 
@@ -45,11 +52,47 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     private List<MediaItem> mediaItems;
     private int position;
     private Uri uri;
+    private AudioMediaController audioMediaController;
+    //seekbar
+    private int mediaDuration;
+    private int currentMediaPosition;
+
+    private Handler handler = new mHandler(this);
+    private final int MEDIA_PREPARED_TIMER = 1;
+
+
+    public static class mHandler extends Handler {
+        private WeakReference<Object> mWeakReference;
+
+        public mHandler(Object object) {
+            mWeakReference = new WeakReference<>(object);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            AudioPlayer mReference = (AudioPlayer) mWeakReference.get();
+            mReference.mHandleMessage(msg);
+        }
+    }
+
+    public void mHandleMessage(Message msg) {
+        switch (msg.what) {
+            case MEDIA_PREPARED_TIMER:
+                setMediaProgress();
+
+                handler.removeMessages(MEDIA_PREPARED_TIMER);
+                handler.sendEmptyMessageDelayed(MEDIA_PREPARED_TIMER, 1000);
+                break;
+
+        }
+    }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             musicService = IMusicService.Stub.asInterface(service);
+            initMusicService();
             Log.e("TAG", "IMusicService");
         }
 
@@ -58,6 +101,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
 
         }
     };
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +110,14 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         initListener();
         initData();
 
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (serviceConnection != null) {
+            unbindService(serviceConnection);
+        }
+        super.onDestroy();
     }
 
     private void initView() {
@@ -102,13 +154,24 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
 
         bindService();
         initMediaPlay();
+
     }
+
     private void bindService() {
         Intent intent = new Intent();
         intent.setPackage("com.mobileplay");
         intent.setAction("com.mobileplay.service.action");
-//        startService(intent);
+//        intent.setClass(this, MusicService.class);
+        startService(intent);
+
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+    public static void stopMusicService(Context context) {
+        Intent intent = new Intent();
+        intent.setPackage("com.mobileplay");
+        intent.setAction("com.mobileplay.service.action");
+
+        context.stopService(intent);
     }
     private void initMediaPlay() {
         Serializable list = getIntent().getSerializableExtra(MEDIA_LIST);
@@ -117,11 +180,52 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         }
         if (mediaItems != null && mediaItems.size() > 0) {
             position = getIntent().getIntExtra(MEDIA_POSITION, 0);
-
         } else {
             uri = getIntent().getData();
         }
+
     }
+
+    private void initMusicService() {
+        try {
+            if (musicService != null) {
+                audioMediaController = musicService.getAudioMediaController();
+                if (audioMediaController.getMediaItems() == null) {
+                    audioMediaController.setMediaItems(mediaItems);
+                }
+                audioMediaController.setPosition(position);
+                audioMediaController.setOnPreparedListener(new AudioMediaController.OnPreparedListener() {
+                    @Override
+                 public void OnPrepared() {
+                        initSeekBar();
+                        handler.sendEmptyMessage(MEDIA_PREPARED_TIMER);
+                    }
+                });
+                audioMediaController.openAudio();
+
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * SeekBar
+     */
+    private void initSeekBar() {
+        mediaDuration = audioMediaController.getDuration();
+        sb_audio.setMax(mediaDuration);
+
+    }
+
+    private void setMediaProgress() {
+        currentMediaPosition = audioMediaController.getCurrentPosition();
+        sb_audio.setProgress(currentMediaPosition);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        tv_time.setText(simpleDateFormat.format(currentMediaPosition) + "/" + simpleDateFormat.format(mediaDuration));
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -132,7 +236,11 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
 
                 break;
             case R.id.btn_play_start_pause:
-                initServiceData();
+                if (audioMediaController.startAndPause()) {
+                    btn_play_start_pause.setBackgroundResource(R.drawable.btn_play_pause_selector);
+                } else {
+                    btn_play_start_pause.setBackgroundResource(R.drawable.btn_play_start_selector);
+                }
                 break;
             case R.id.btn_next:
 
@@ -140,20 +248,6 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
             case R.id.btn_lyrics:
 
                 break;
-        }
-    }
-
-    private void initServiceData() {
-        try {
-            if(musicService!=null) {
-                musicService.setMediaList(mediaItems);
-                musicService.setMediaPosition(position);
-
-                mediaItems = musicService.getMediaList();
-                Log.e("TAG", mediaItems.get(0).toString());
-            }
-        } catch (RemoteException e) {
-            e.printStackTrace();
         }
     }
 

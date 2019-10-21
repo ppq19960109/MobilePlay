@@ -85,6 +85,7 @@ public class AudioPager extends BasePager {
     @Override
     public void close() {
         handler.removeCallbacksAndMessages(null);
+        AudioPlayer.stopMusicService(getContext());
     }
 
     @Nullable
