@@ -1,5 +1,7 @@
 package com.mobileplay.aidl;
 
+import android.app.Service;
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -10,11 +12,12 @@ import java.io.IOException;
 import java.util.List;
 
 public class AudioMediaController implements Parcelable {
-
+    private Service service;
     public List<MediaItem> mediaItems;
+    public MediaItem mediaItem;
     private int position;
     private int currentPosition=-1;
-    private MediaPlayer mediaplayer;
+    public MediaPlayer mediaplayer;
 
     private OnPreparedListener mOnPrepared;
 
@@ -22,7 +25,8 @@ public class AudioMediaController implements Parcelable {
         this.mOnPrepared=OnPrepared;
     }
 
-    public AudioMediaController() {
+    public AudioMediaController(Service service) {
+        this.service=service;
     }
     public void close(){
         if (mediaplayer != null) {
@@ -50,6 +54,7 @@ public class AudioMediaController implements Parcelable {
         if(currentPosition==position){
             return;
         }
+        mediaItem=mediaItems.get(position);
         if (mediaplayer != null) {
             mediaplayer.reset();
 //            mediaplayer.release();
@@ -63,6 +68,7 @@ public class AudioMediaController implements Parcelable {
                     if(mOnPrepared!=null){
                         mOnPrepared.OnPrepared();
                     }
+                    sendBroadcastToActivity();
                     mediaplayer.start();
                 }
             });
@@ -90,6 +96,13 @@ public class AudioMediaController implements Parcelable {
             mediaplayer.prepareAsync();
             currentPosition=position;
         }
+    }
+
+    private void sendBroadcastToActivity() {
+        Intent intent = new Intent();
+        intent.setAction("AudioPlayer");
+//        intent.setComponent(new ComponentName("com.mobileplay.mediaPlay","com.mobileplay.mediaPlay.AudioBroadcastReceiver"));
+        service.sendBroadcast(intent);
     }
 
     public boolean startAndPause() {
@@ -137,11 +150,11 @@ public class AudioMediaController implements Parcelable {
     }
 
     public String getName() {
-        return "audio";
+        return mediaItem.getName();
     }
 
     public String getArtist() {
-        return null;
+        return mediaItem.getArtist();
     }
 
     public void seekTo(int seekto) {

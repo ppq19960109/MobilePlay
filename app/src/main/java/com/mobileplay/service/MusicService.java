@@ -14,7 +14,7 @@ import java.util.List;
 
 public class MusicService extends Service {
 
-    private AudioMediaController audioMediaController = new AudioMediaController();
+    private AudioMediaController audioMediaController = new AudioMediaController(this);
 
     public MusicService() {
     }

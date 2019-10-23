@@ -5,17 +5,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.RadioGroup;
 
-import androidx.annotation.Nullable;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-
 import com.mobileplay.R;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.User;
 import com.mobileplay.gen.App;
 import com.mobileplay.gen.DaoSession;
 import com.mobileplay.gen.UserDao;
+import com.mobileplay.pager.AudioPager;
 import com.mobileplay.pager.BasePager;
 import com.mobileplay.pager.NetAudioPager;
 import com.mobileplay.pager.NetVideoPager;
@@ -27,6 +23,10 @@ import org.greenrobot.greendao.query.QueryBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 
@@ -49,7 +49,7 @@ public class MainActivity extends FragmentActivity {
 //        basePagers.add(new NetVideoPager(this));
 //        basePagers.add(new NetAudioPager(this));
 
-        Observable.just(new VideoPager(this), new VideoPager(this), new NetVideoPager(this), new NetAudioPager(this))
+        Observable.just(new VideoPager(this), new AudioPager(this), new NetVideoPager(this), new NetAudioPager(this))
                 .subscribe(new Consumer<BasePager>() {
                                @Override
                                public void accept(BasePager basePager) throws Exception {

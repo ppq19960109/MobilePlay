@@ -75,6 +75,13 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </service>
+        <receiver
+        android:name="com.mobileplay.mediaPlay.AudioPlayer$AudioBroadcastReceiver" >
+        <intent-filter>
+            <action android:name="AudioPlayer" />
+            <category android:name="android.intent.category.DEFAULT"/>
+        </intent-filter>
+    </receiver>
     </application>
 <!--    android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"-->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />

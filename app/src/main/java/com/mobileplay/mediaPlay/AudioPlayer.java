@@ -1,9 +1,11 @@
 package com.mobileplay.mediaPlay;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.drawable.AnimationDrawable;
 import android.net.Uri;
@@ -57,6 +59,8 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     private int mediaDuration;
     private int currentMediaPosition;
 
+    private AudioBroadcastReceiver audioBroadcastReceiver=new AudioBroadcastReceiver();
+
     private Handler handler = new mHandler(this);
     private final int MEDIA_PREPARED_TIMER = 1;
 
@@ -88,6 +92,17 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         }
     }
 
+    class AudioBroadcastReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            Log.e("TAG", "AudioBroadcastReceiver");
+            if(action=="AudioPlayer"){
+                audioPlayerOnPrepared();
+            }
+        }
+    }
+
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -109,14 +124,17 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         initView();
         initListener();
         initData();
+//        Log.e("TAG", "==:"+audioBroadcastReceiver.getClass().getName());;
 
     }
+
 
     @Override
     protected void onDestroy() {
         if (serviceConnection != null) {
             unbindService(serviceConnection);
         }
+        unregisterReceiver(audioBroadcastReceiver);
         super.onDestroy();
     }
 
@@ -154,9 +172,14 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
 
         bindService();
         initMediaPlay();
-
+        registerReceiver();
     }
 
+    private void registerReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("AudioPlayer");
+        registerReceiver(audioBroadcastReceiver,intentFilter);
+    }
     private void bindService() {
         Intent intent = new Intent();
         intent.setPackage("com.mobileplay");
@@ -194,19 +217,25 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
                     audioMediaController.setMediaItems(mediaItems);
                 }
                 audioMediaController.setPosition(position);
-                audioMediaController.setOnPreparedListener(new AudioMediaController.OnPreparedListener() {
-                    @Override
-                 public void OnPrepared() {
-                        initSeekBar();
-                        handler.sendEmptyMessage(MEDIA_PREPARED_TIMER);
-                    }
-                });
+//                audioMediaController.setOnPreparedListener(new AudioMediaController.OnPreparedListener() {
+//                    @Override
+//                 public void OnPrepared() {
+//                        audioPlayerOnPrepared();
+//                    }
+//                });
                 audioMediaController.openAudio();
 
             }
         } catch (RemoteException e) {
             e.printStackTrace();
         }
+    }
+
+    private void audioPlayerOnPrepared() {
+        tv_artist.setText(audioMediaController.getArtist());
+        tv_audio_name.setText(audioMediaController.getName());
+        initSeekBar();
+        handler.sendEmptyMessage(MEDIA_PREPARED_TIMER);
     }
 
     /**
@@ -230,7 +259,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_audio_playmode:
-
+                audioMediaController.mediaplayer.pause();
                 break;
             case R.id.btn_pre:
 
@@ -250,6 +279,5 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
                 break;
         }
     }
-
 
 }
