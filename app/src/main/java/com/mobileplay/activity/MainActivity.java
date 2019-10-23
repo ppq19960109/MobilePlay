@@ -16,7 +16,6 @@ import com.mobileplay.doamain.User;
 import com.mobileplay.gen.App;
 import com.mobileplay.gen.DaoSession;
 import com.mobileplay.gen.UserDao;
-import com.mobileplay.pager.AudioPager;
 import com.mobileplay.pager.BasePager;
 import com.mobileplay.pager.NetAudioPager;
 import com.mobileplay.pager.NetVideoPager;
@@ -28,6 +27,9 @@ import org.greenrobot.greendao.query.QueryBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.Observable;
+import io.reactivex.functions.Consumer;
+
 public class MainActivity extends FragmentActivity {
 
     private RadioGroup rg_tag;
@@ -38,14 +40,24 @@ public class MainActivity extends FragmentActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        CommonUtils.isGrantExternalRW(this,0);
+        CommonUtils.isGrantExternalRW(this, 0);
         initView();
         initListener();
 
-        basePagers.add(new VideoPager(this));
-        basePagers.add(new AudioPager(this));
-        basePagers.add(new NetVideoPager(this));
-        basePagers.add(new NetAudioPager(this));
+//        basePagers.add(new VideoPager(this));
+//        basePagers.add(new AudioPager(this));
+//        basePagers.add(new NetVideoPager(this));
+//        basePagers.add(new NetAudioPager(this));
+
+        Observable.just(new VideoPager(this), new VideoPager(this), new NetVideoPager(this), new NetAudioPager(this))
+                .subscribe(new Consumer<BasePager>() {
+                               @Override
+                               public void accept(BasePager basePager) throws Exception {
+                                   basePagers.add(basePager);
+                               }
+                           }
+                );
+
 
         rg_tag.check(R.id.rb_video);
 //        initDAO();
@@ -54,7 +66,7 @@ public class MainActivity extends FragmentActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.i("TAG","Activity onConfigurationChanged");
+        Log.i("TAG", "Activity onConfigurationChanged");
     }
 
     private void setfragment() {
@@ -68,6 +80,7 @@ public class MainActivity extends FragmentActivity {
         CommonUtils.debugContext = this;
         rg_tag = (RadioGroup) findViewById(R.id.rg_tag);
     }
+
     private void initListener() {
         rg_tag.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -103,6 +116,7 @@ public class MainActivity extends FragmentActivity {
         insert();
         query();
     }
+
     private void insert() {
 
 //        userDao.deleteAll();
@@ -117,10 +131,11 @@ public class MainActivity extends FragmentActivity {
         user.setName("hi");
         userDao.insert(user);
     }
+
     private void query() {
         QueryBuilder<User> userQueryBuilder = userDao.queryBuilder().orderAsc(UserDao.Properties.Age);
 
         List<User> list = userQueryBuilder.list();
-        Log.i("TAG", "query: "+list);
+        Log.i("TAG", "query: " + list);
     }
 }

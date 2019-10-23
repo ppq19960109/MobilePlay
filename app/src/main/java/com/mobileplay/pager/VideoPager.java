@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,12 +22,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.mobileplay.mediaPlay.VideoPlay.system.SystemVideoPlayer;
 import com.mobileplay.R;
 import com.mobileplay.adapter.VideoAdapter;
 import com.mobileplay.doamain.MediaItem;
+import com.mobileplay.mediaPlay.VideoPlay.system.SystemVideoPlayer;
 
 import java.util.ArrayList;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class VideoPager extends BasePager {
     private final String MEDIA_LIST = "VideoList";
@@ -112,40 +120,64 @@ public class VideoPager extends BasePager {
 
     private void getDataFromLocal() {
         mediaItems.clear();
-        new Thread() {
-            @Override
-            public void run() {
-                super.run();
-                Uri videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-                ContentResolver contentResolver = getContext().getContentResolver();
-                String[] objs = {
-                        MediaStore.Video.Media.DISPLAY_NAME,
-                        MediaStore.Video.Media.DURATION,
-                        MediaStore.Video.Media.SIZE,
-                        MediaStore.Video.Media.DATA,
-                        MediaStore.Video.Media.ARTIST,
-                };
-                Cursor query = contentResolver.query(videoUri, objs, null, null, null);
-                if (query != null) {
-                    while (query.moveToNext()) {
-                        MediaItem mediaItem = new MediaItem();
-                        mediaItems.add(mediaItem);
-                        String name = query.getString(0);
-                        mediaItem.setName(name);
-                        long duration = query.getLong(1);
-                        mediaItem.setDuration(duration);
-                        long size = query.getLong(2);
-                        mediaItem.setSize(size);
-                        String data = query.getString(3);
-                        mediaItem.setData(data);
-                        String artist = query.getString(4);
-                        mediaItem.setArtist(artist);
+
+                Observable.create(new ObservableOnSubscribe<Cursor>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Cursor> emitter) throws Exception {
+
+                        Uri videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                        ContentResolver contentResolver = getContext().getContentResolver();
+                        String[] objs = {
+                                MediaStore.Video.Media.DISPLAY_NAME,
+                                MediaStore.Video.Media.DURATION,
+                                MediaStore.Video.Media.SIZE,
+                                MediaStore.Video.Media.DATA,
+                                MediaStore.Video.Media.ARTIST,
+                        };
+                        Cursor cursor = contentResolver.query(videoUri, objs, null, null, null);
+                        emitter.onNext(cursor);
                     }
-                    query.close();
-                }
-                handler.sendEmptyMessage(GET_MEDIA);
-            }
-        }.start();
+                }).subscribeOn(Schedulers.io()).observeOn(Schedulers.io())
+                        .subscribe(new Observer<Cursor>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(Cursor cursor) {
+                        Log.e("TAG", "onNext..."+Thread.currentThread().getName());
+                        if (cursor != null) {
+                            while (cursor.moveToNext()) {
+                                MediaItem mediaItem = new MediaItem();
+                                mediaItems.add(mediaItem);
+                                String name = cursor.getString(0);
+                                mediaItem.setName(name);
+                                long duration = cursor.getLong(1);
+                                mediaItem.setDuration(duration);
+                                long size = cursor.getLong(2);
+                                mediaItem.setSize(size);
+                                String data = cursor.getString(3);
+                                mediaItem.setData(data);
+                                String artist = cursor.getString(4);
+                                mediaItem.setArtist(artist);
+                            }
+                            cursor.close();
+                            handler.sendEmptyMessage(GET_MEDIA);
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
+                });
+
     }
 
     private void setListViewListener() {
