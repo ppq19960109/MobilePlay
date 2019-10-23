@@ -5,20 +5,28 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.RadioGroup;
 
+import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
 import com.mobileplay.R;
 import com.mobileplay.common.CommonUtils;
+import com.mobileplay.doamain.User;
+import com.mobileplay.gen.App;
+import com.mobileplay.gen.DaoSession;
+import com.mobileplay.gen.UserDao;
 import com.mobileplay.pager.AudioPager;
 import com.mobileplay.pager.BasePager;
 import com.mobileplay.pager.NetAudioPager;
 import com.mobileplay.pager.NetVideoPager;
 import com.mobileplay.pager.VideoPager;
 
-import java.util.ArrayList;
+import org.greenrobot.greendao.database.Database;
+import org.greenrobot.greendao.query.QueryBuilder;
 
-import androidx.annotation.Nullable;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends FragmentActivity {
 
@@ -40,6 +48,7 @@ public class MainActivity extends FragmentActivity {
         basePagers.add(new NetAudioPager(this));
 
         rg_tag.check(R.id.rb_video);
+//        initDAO();
     }
 
     @Override
@@ -82,4 +91,36 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
+    private UserDao userDao;
+
+    private void initDAO() {
+        DaoSession daoSession = ((App) getApplication()).getDaoSession();
+        Database db = ((App) getApplication()).getDb();
+//        db.execSQL("DROP TABLE IF EXISTS USER");
+//        db.execSQL("create table IF NOT EXISTS USER");
+        userDao = daoSession.getUserDao();
+
+        insert();
+        query();
+    }
+    private void insert() {
+
+//        userDao.deleteAll();
+        User user = new User();
+//        user.setId((long)20);
+        user.setAge("24");
+        user.setName("hello");
+        userDao.insert(user);
+        user = new User();
+//        user.setId((long)3);
+        user.setAge("35");
+        user.setName("hi");
+        userDao.insert(user);
+    }
+    private void query() {
+        QueryBuilder<User> userQueryBuilder = userDao.queryBuilder().orderAsc(UserDao.Properties.Age);
+
+        List<User> list = userQueryBuilder.list();
+        Log.i("TAG", "query: "+list);
+    }
 }

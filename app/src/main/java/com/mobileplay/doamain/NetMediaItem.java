@@ -2,7 +2,8 @@ package com.mobileplay.doamain;
 
 import java.util.List;
 
-public class NetMediaItem extends MediaItem{
+
+public class NetMediaItem extends MediaItem {
     private int id;
     private String movieName;
     private String coverImg;
