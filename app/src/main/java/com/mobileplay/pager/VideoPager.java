@@ -7,8 +7,6 @@ import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -33,37 +31,21 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 public class VideoPager extends BasePager {
     private final String MEDIA_LIST = "VideoList";
     private final String MEDIA_POSITION = "position";
-    private final int GET_MEDIA = 1;
 
     private ListView listview;
     private TextView tv_nomedia;
     private ProgressBar pb_load;
 
     private ArrayList<MediaItem> mediaItems = new ArrayList<>();
-
-    private Handler handler = new MyHandler(this);
-
-    @Override
-    public void mHandleMessage(Message msg) {
-        switch (msg.what) {
-            case GET_MEDIA:
-                if (mediaItems != null && mediaItems.size() > 0) {
-                    VideoAdapter videoAdapter = new VideoAdapter(getContext(), mediaItems);
-                    listview.setAdapter(videoAdapter);
-                } else {
-                    tv_nomedia.setVisibility(View.VISIBLE);
-                }
-                pb_load.setVisibility(View.GONE);
-                break;
-        }
-    }
-
 
     public VideoPager() {
 
@@ -80,7 +62,7 @@ public class VideoPager extends BasePager {
     }
 
     public void initListener() {
-        setListViewListener();
+
     }
 
     @Override
@@ -91,7 +73,7 @@ public class VideoPager extends BasePager {
 
     @Override
     public void close() {
-        handler.removeCallbacksAndMessages(null);
+
     }
 
     @Nullable
@@ -119,64 +101,87 @@ public class VideoPager extends BasePager {
     }
 
     private void getDataFromLocal() {
-        mediaItems.clear();
 
-                Observable.create(new ObservableOnSubscribe<Cursor>() {
-                    @Override
-                    public void subscribe(ObservableEmitter<Cursor> emitter) throws Exception {
-
-                        Uri videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
-                        ContentResolver contentResolver = getContext().getContentResolver();
-                        String[] objs = {
-                                MediaStore.Video.Media.DISPLAY_NAME,
-                                MediaStore.Video.Media.DURATION,
-                                MediaStore.Video.Media.SIZE,
-                                MediaStore.Video.Media.DATA,
-                                MediaStore.Video.Media.ARTIST,
-                        };
-                        Cursor cursor = contentResolver.query(videoUri, objs, null, null, null);
-                        emitter.onNext(cursor);
+        Observable.create(new ObservableOnSubscribe<Cursor>() {
+            @Override
+            public void subscribe(ObservableEmitter<Cursor> emitter) throws Exception {
+                Uri videoUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                ContentResolver contentResolver = getContext().getContentResolver();
+                String[] objs = {
+                        MediaStore.Video.Media.DISPLAY_NAME,
+                        MediaStore.Video.Media.DURATION,
+                        MediaStore.Video.Media.SIZE,
+                        MediaStore.Video.Media.DATA,
+                        MediaStore.Video.Media.ARTIST,
+                };
+                Cursor cursor = contentResolver.query(videoUri, objs, null, null, null);
+                emitter.onNext(cursor);
+                emitter.onComplete();
+            }
+        }).map(new Function<Cursor, ArrayList<MediaItem>>() {
+            @Override
+            public ArrayList<MediaItem> apply(Cursor cursor) throws Exception {
+                Log.e("TAG", "map..." + Thread.currentThread().getName());
+                if (cursor != null) {
+                    mediaItems.clear();
+                    while (cursor.moveToNext()) {
+                        MediaItem mediaItem = new MediaItem();
+                        mediaItems.add(mediaItem);
+                        String name = cursor.getString(0);
+                        mediaItem.setName(name);
+                        long duration = cursor.getLong(1);
+                        mediaItem.setDuration(duration);
+                        long size = cursor.getLong(2);
+                        mediaItem.setSize(size);
+                        String data = cursor.getString(3);
+                        mediaItem.setData(data);
+                        String artist = cursor.getString(4);
+                        mediaItem.setArtist(artist);
                     }
-                }).subscribeOn(Schedulers.io()).observeOn(Schedulers.io())
-                        .subscribe(new Observer<Cursor>() {
+                    cursor.close();
+                }
+                return mediaItems;
+            }
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doAfterNext(new Consumer<ArrayList<MediaItem>>() {
                     @Override
-                    public void onSubscribe(Disposable d) {
-
+                    public void accept(ArrayList<MediaItem> mediaItems) throws Exception {
+                        Log.e("TAG", "doAfterNext..." + Thread.currentThread().getName());
+                        setListViewListener();
                     }
+                })
+                .subscribe(new Observer<ArrayList<MediaItem>>() {
+                               @Override
+                               public void onSubscribe(Disposable d) {
 
-                    @Override
-                    public void onNext(Cursor cursor) {
-                        Log.e("TAG", "onNext..."+Thread.currentThread().getName());
-                        if (cursor != null) {
-                            while (cursor.moveToNext()) {
-                                MediaItem mediaItem = new MediaItem();
-                                mediaItems.add(mediaItem);
-                                String name = cursor.getString(0);
-                                mediaItem.setName(name);
-                                long duration = cursor.getLong(1);
-                                mediaItem.setDuration(duration);
-                                long size = cursor.getLong(2);
-                                mediaItem.setSize(size);
-                                String data = cursor.getString(3);
-                                mediaItem.setData(data);
-                                String artist = cursor.getString(4);
-                                mediaItem.setArtist(artist);
-                            }
-                            cursor.close();
-                            handler.sendEmptyMessage(GET_MEDIA);
-                        }
-                    }
+                               }
 
-                    @Override
-                    public void onError(Throwable e) {
+                               @Override
+                               public void onNext(ArrayList<MediaItem> mediaItems) {
+                                   Log.e("TAG", "onNext..." + Thread.currentThread().getName());
 
-                    }
+                                   if (mediaItems != null && mediaItems.size() > 0) {
+                                       VideoAdapter videoAdapter = new VideoAdapter(getContext(), mediaItems);
+                                       listview.setAdapter(videoAdapter);
+                                   } else {
+                                       tv_nomedia.setVisibility(View.VISIBLE);
+                                   }
+                                   pb_load.setVisibility(View.GONE);
 
-                    @Override
-                    public void onComplete() {
+                               }
 
-                    }
-                });
+                               @Override
+                               public void onError(Throwable e) {
+
+                               }
+
+                               @Override
+                               public void onComplete() {
+
+                               }
+                           }
+                );
 
     }
 
