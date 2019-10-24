@@ -145,7 +145,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         tv_time = (TextView) findViewById(R.id.tv_time);
         tv_time.setOnClickListener(this);
         sb_audio = (SeekBar) findViewById(R.id.sb_audio);
-        sb_audio.setOnClickListener(this);
+
         btn_audio_playmode = (Button) findViewById(R.id.btn_audio_playmode);
         btn_audio_playmode.setOnClickListener(this);
         btn_pre = (Button) findViewById(R.id.btn_pre);
@@ -164,6 +164,24 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         btn_play_start_pause.setOnClickListener(this);
         btn_next.setOnClickListener(this);
         btn_lyrics.setOnClickListener(this);
+        sb_audio.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if(fromUser){
+                    audioMediaController.seekTo(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     private void initData() {

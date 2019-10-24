@@ -158,7 +158,7 @@ public class AudioMediaController implements Parcelable {
     }
 
     public void seekTo(int seekto) {
-
+         mediaplayer.seekTo(seekto);
     }
 
     public boolean isPlaying() {
