@@ -5,7 +5,7 @@ import android.os.Parcelable;
 
 import java.io.Serializable;
 
-public class MediaItem implements Serializable, Parcelable {
+public class MediaItem implements Serializable , Parcelable{
     private String name;
     private long duration;
     private long size;

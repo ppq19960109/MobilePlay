@@ -3,9 +3,6 @@ package com.mobileplay.pager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,29 +12,36 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.mobileplay.Interface.IRetrofitRequest;
-import com.mobileplay.R;
-import com.mobileplay.mediaPlay.VideoPlay.system.SystemVideoPlayer;
-import com.mobileplay.adapter.NetVideoAdapter;
-import com.mobileplay.mediaPlay.CacheUtils;
-import com.mobileplay.common.CommonUtils;
-import com.mobileplay.doamain.NetMediaItem;
-import com.mobileplay.doamain.Trailers;
-
-import java.util.ArrayList;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+
+import com.mobileplay.Interface.IRetrofitRequest;
+import com.mobileplay.R;
+import com.mobileplay.adapter.NetVideoAdapter;
+import com.mobileplay.common.CommonUtils;
+import com.mobileplay.doamain.NetMediaItem;
+import com.mobileplay.doamain.Trailers;
+import com.mobileplay.mediaPlay.CacheUtils;
+import com.mobileplay.mediaPlay.VideoPlay.system.SystemVideoPlayer;
+
+import java.util.ArrayList;
+
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class NetVideoPager extends BasePager {
     public final String NET_VIDEO_URL = "http://api.m.mtime.cn/PageSubArea/TrailerList.api";
-    private final int GET_MEDIA = 1;
+
+    private final String MEDIA_LIST = "VideoList";
+    private final String MEDIA_POSITION = "position";
 
     private ListView listview;
     private TextView tv_nomedia;
@@ -47,23 +51,6 @@ public class NetVideoPager extends BasePager {
 
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefreshLayout;
 
-    private Handler handler = new MyHandler(this);
-
-    @Override
-    public void mHandleMessage(Message msg) {
-        switch (msg.what) {
-            case GET_MEDIA:
-                if (netMediaItems != null && netMediaItems.size() > 0) {
-                    NetVideoAdapter netVideoAdapter = new NetVideoAdapter(getContext(), netMediaItems);
-                    listview.setAdapter(netVideoAdapter);
-                } else {
-                    tv_nomedia.setVisibility(View.VISIBLE);
-                }
-                pb_load.setVisibility(View.GONE);
-                swipeRefreshLayout.setRefreshing(false);
-                break;
-        }
-    }
 
     public NetVideoPager() {
 
@@ -102,7 +89,7 @@ public class NetVideoPager extends BasePager {
     }
 
     public void initListener() {
-        setListViewListener();
+
         swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
                 android.R.color.holo_green_light, android.R.color.holo_orange_light,
                 android.R.color.holo_red_light);
@@ -116,65 +103,6 @@ public class NetVideoPager extends BasePager {
                         initData();
                     }
                 }.start();
-            }
-        });
-
-    }
-
-    @Override
-    public void initData() {
-        super.initData();
-        netMediaItems = (ArrayList<NetMediaItem>) CacheUtils.readObject(context, "NetVideo");
-//        handler.sendEmptyMessage(GET_MEDIA);
-        getNetDataFromRetrofit();
-    }
-    @Override
-    public void close() {
-        handler.removeCallbacksAndMessages(null);
-    }
-    private void getNetDataFromRetrofit() {
-        Retrofit retrofit = new Retrofit.Builder()  //创建Retrofit实例
-                .baseUrl("http://api.m.mtime.cn/")    //这里需要传入url的域名部分
-                .addConverterFactory(GsonConverterFactory.create()) //返回的数据经过转换工厂转换成我们想要的数据，最常用的就是Gson
-                .build();   //构建实例
-
-        IRetrofitRequest retrofitService = retrofit.create(IRetrofitRequest.class);
-
-        Call<Trailers> call = retrofitService.getNetVideoList();
-
-        call.enqueue(new Callback<Trailers>() {
-            @Override
-            public void onResponse(Call<Trailers> call, Response<Trailers> response) {
-                netMediaItems = response.body().getTrailers();
-                CacheUtils.saveObject(context, netMediaItems, "NetVideo");
-                handler.sendEmptyMessage(GET_MEDIA);
-            }
-
-            @Override
-            public void onFailure(Call<Trailers> call, Throwable t) {
-                Log.i("TAG", "onFailure:" + t);
-                handler.sendEmptyMessage(GET_MEDIA);
-            }
-        });
-    }
-
-    private void setListViewListener() {
-        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                NetMediaItem item = (NetMediaItem) parent.getItemAtPosition(position);
-                if (item != null) {
-//                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
-//                    intent.setData(Uri.parse(item.getData()));
-//                    getContext().startActivity(intent);/
-
-                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
-                    Bundle bundle = new Bundle();
-                    bundle.putSerializable("VideoList", netMediaItems);
-                    intent.putExtras(bundle);
-                    intent.putExtra("position", position);
-                    getContext().startActivity(intent);
-                }
             }
         });
         listview.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -196,6 +124,110 @@ public class NetVideoPager extends BasePager {
 
             }
         });
+    }
+
+    @Override
+    public void initData() {
+        super.initData();
+        netMediaItems = (ArrayList<NetMediaItem>) CacheUtils.readObject(context, "NetVideo");
+//        handler.sendEmptyMessage(GET_MEDIA);
+        getNetDataFromRetrofit();
+    }
+    @Override
+    public void close() {
+
+    }
+    private void getNetDataFromRetrofit() {
+        Retrofit retrofit = new Retrofit.Builder()  //创建Retrofit实例
+                .baseUrl("http://api.m.mtime.cn/")    //这里需要传入url的域名部分
+                .addConverterFactory(GsonConverterFactory.create()) //返回的数据经过转换工厂转换成我们想要的数据，最常用的就是Gson
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                .build();   //构建实例
+
+        IRetrofitRequest retrofitService = retrofit.create(IRetrofitRequest.class);
+
+        Observable<Trailers> netVideoList = retrofitService.getNetVideoList();
+        netVideoList.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread()).doAfterNext(new Consumer<Trailers>() {
+            @Override
+            public void accept(Trailers trailers) throws Exception {
+                setListViewListener();
+            }
+        })
+                .subscribe(new Observer<Trailers>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Trailers trailers) {
+                netMediaItems = trailers.getTrailers();
+                CacheUtils.saveObject(context, netMediaItems, "NetVideo");
+                refreshUI();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+//        Call<Trailers> call = retrofitService.getNetVideoList();
+//
+//        call.enqueue(new Callback<Trailers>() {
+//            @Override
+//            public void onResponse(Call<Trailers> call, Response<Trailers> response) {
+//                netMediaItems = response.body().getTrailers();
+//                CacheUtils.saveObject(context, netMediaItems, "NetVideo");
+//                handler.sendEmptyMessage(GET_MEDIA);
+//            }
+//
+//            @Override
+//            public void onFailure(Call<Trailers> call, Throwable t) {
+//                Log.i("TAG", "onFailure:" + t);
+//                handler.sendEmptyMessage(GET_MEDIA);
+//            }
+//        });
+    }
+
+    private void refreshUI() {
+        if (netMediaItems != null && netMediaItems.size() > 0) {
+            NetVideoAdapter netVideoAdapter = new NetVideoAdapter(getContext(), netMediaItems);
+            listview.setAdapter(netVideoAdapter);
+        } else {
+            tv_nomedia.setVisibility(View.VISIBLE);
+        }
+        pb_load.setVisibility(View.GONE);
+        swipeRefreshLayout.setRefreshing(false);
+    }
+
+    private void setListViewListener() {
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                NetMediaItem item = (NetMediaItem) parent.getItemAtPosition(position);
+                if (item != null) {
+//                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
+//                    intent.setData(Uri.parse(item.getData()));
+//                    getContext().startActivity(intent);/
+
+                    Intent intent = new Intent(getContext(), SystemVideoPlayer.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable(MEDIA_LIST, netMediaItems);
+
+//                    Log.i("TAG", "onItemClick: "+netMediaItems);
+                    intent.putExtras(bundle);
+                    intent.putExtra(MEDIA_POSITION, position);
+                    getContext().startActivity(intent);
+                }
+            }
+        });
+
     }
 
 }

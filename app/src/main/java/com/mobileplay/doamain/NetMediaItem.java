@@ -1,9 +1,12 @@
 package com.mobileplay.doamain;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.List;
 
 
-public class NetMediaItem extends MediaItem {
+public class NetMediaItem extends MediaItem implements Parcelable {
     private int id;
     private String movieName;
     private String coverImg;
@@ -125,10 +128,61 @@ public class NetMediaItem extends MediaItem {
     public String getName() {
         return getMovieName();
     }
-
+    @Override
+    public void setName(String name) {
+        super.setName(name);
+    }
     @Override
     public String getData() {
         return getHightUrl();
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(this.id);
+        dest.writeString(this.movieName);
+        dest.writeString(this.coverImg);
+        dest.writeInt(this.movieId);
+        dest.writeString(this.url);
+        dest.writeString(this.hightUrl);
+        dest.writeString(this.videoTitle);
+        dest.writeInt(this.videoLength);
+        dest.writeFloat(this.rating);
+        dest.writeStringList(this.type);
+        dest.writeString(this.summary);
+    }
+
+    public NetMediaItem() {
+    }
+
+    protected NetMediaItem(Parcel in) {
+        this.id = in.readInt();
+        this.movieName = in.readString();
+        this.coverImg = in.readString();
+        this.movieId = in.readInt();
+        this.url = in.readString();
+        this.hightUrl = in.readString();
+        this.videoTitle = in.readString();
+        this.videoLength = in.readInt();
+        this.rating = in.readFloat();
+        this.type=in.createStringArrayList();
+        this.summary = in.readString();
+    }
+
+    public static final Parcelable.Creator<NetMediaItem> CREATOR = new Parcelable.Creator<NetMediaItem>() {
+        @Override
+        public NetMediaItem createFromParcel(Parcel source) {
+            return new NetMediaItem(source);
+        }
+
+        @Override
+        public NetMediaItem[] newArray(int size) {
+            return new NetMediaItem[size];
+        }
+    };
 }

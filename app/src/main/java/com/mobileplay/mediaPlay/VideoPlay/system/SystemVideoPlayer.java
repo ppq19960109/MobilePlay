@@ -628,6 +628,8 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         Serializable videoList = getIntent().getSerializableExtra(MEDIA_LIST);
         if (videoList != null) {
             mediaItems = (ArrayList) videoList;
+        }else {
+            Log.i("TAG", "videoList: null");
         }
         if (mediaItems != null && mediaItems.size() > 0) {
             position = getIntent().getIntExtra(MEDIA_POSITION, 0);
@@ -778,8 +780,10 @@ public class SystemVideoPlayer extends Activity implements View.OnClickListener 
         MediaItem mediaItem = mediaItems.get(position);
         String uriData = mediaItem.getData();
         tv_name.setText(mediaItem.getName());
-        video_view.setVideoPath(uriData);
-        isNet = CommonUtils.isNetUri(uriData);
+        if(uriData!=null) {
+            video_view.setVideoPath(uriData);
+            isNet = CommonUtils.isNetUri(uriData);
+        }
         setButtonState();
     }
 

@@ -160,15 +160,7 @@ public class VideoPager extends BasePager {
                                @Override
                                public void onNext(ArrayList<MediaItem> mediaItems) {
                                    Log.e("TAG", "onNext..." + Thread.currentThread().getName());
-
-                                   if (mediaItems != null && mediaItems.size() > 0) {
-                                       VideoAdapter videoAdapter = new VideoAdapter(getContext(), mediaItems);
-                                       listview.setAdapter(videoAdapter);
-                                   } else {
-                                       tv_nomedia.setVisibility(View.VISIBLE);
-                                   }
-                                   pb_load.setVisibility(View.GONE);
-
+                                   refreshUI(mediaItems);
                                }
 
                                @Override
@@ -183,6 +175,16 @@ public class VideoPager extends BasePager {
                            }
                 );
 
+    }
+
+    private void refreshUI(ArrayList<MediaItem> mediaItems) {
+        if (mediaItems != null && mediaItems.size() > 0) {
+            VideoAdapter videoAdapter = new VideoAdapter(getContext(), mediaItems);
+            listview.setAdapter(videoAdapter);
+        } else {
+            tv_nomedia.setVisibility(View.VISIBLE);
+        }
+        pb_load.setVisibility(View.GONE);
     }
 
     private void setListViewListener() {
