@@ -17,6 +17,7 @@ import android.util.Log;
 import com.mobileplay.R;
 import com.mobileplay.doamain.MediaItem;
 import com.mobileplay.mediaPlay.AudioPlayer;
+import com.mobileplay.mediaPlay.CacheUtils;
 import com.mobileplay.pager.AudioPager;
 
 import java.io.IOException;
@@ -28,6 +29,11 @@ import static android.content.Context.NOTIFICATION_SERVICE;
 
 
 public class AudioMediaController implements Parcelable {
+    public static final int REPEAT_NORMAL = 0;
+    public static final int REPEAT_SINGLE = 1;
+    public static final int REPEAT_ALL = 2;
+    private int playMode =REPEAT_NORMAL;
+
     private Service service;
     public List<MediaItem> mediaItems;
     public MediaItem mediaItem;
@@ -43,6 +49,7 @@ public class AudioMediaController implements Parcelable {
 
     public AudioMediaController(Service service) {
         this.service = service;
+
     }
 
     public void close() {
@@ -81,6 +88,7 @@ public class AudioMediaController implements Parcelable {
 //            mediaplayer.release();
 //            mediaplayer = null;
         } else {
+            playMode=CacheUtils.getInt(service,"AudioPlayMode","playmode");
             mediaplayer = new MediaPlayer();
             //设置准备好的监听
             mediaplayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
@@ -103,11 +111,23 @@ public class AudioMediaController implements Parcelable {
             mediaplayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mp) {
-
+                        next();
+//                      switch (playMode){
+//                          case REPEAT_NORMAL:
+//                          case REPEAT_ALL:
+//                              next();
+//                              break;
+//                          case REPEAT_SINGLE:
+//                              currentPosition=-1;
+//                              openAudio();
+//                              break;
+//                      }
                 }
             });
-
+            mediaPlayLoop();
         }
+
+
         if (mediaItems != null && mediaItems.size() > 0) {
             MediaItem mediaItem = mediaItems.get(position);
             try {
@@ -159,7 +179,7 @@ public class AudioMediaController implements Parcelable {
             NotificationChannel notificationChannel = new NotificationChannel("com.mobileplay.aidl", "AudioMediaController",
                     NotificationManager.IMPORTANCE_DEFAULT);
             // 设置渠道描述
-            notificationChannel.setDescription("测试通知组");
+            notificationChannel.setDescription("test");
             // 是否绕过请勿打扰模式
             notificationChannel.canBypassDnd();
             // 设置绕过请勿打扰模式
@@ -204,21 +224,52 @@ public class AudioMediaController implements Parcelable {
         }
     }
 
-
     public void next() {
-
+        if(position+1<mediaItems.size()) {
+            ++position;
+            openAudio();
+            return;
+        }
+        if (playMode==REPEAT_ALL) {
+            if(position+1==mediaItems.size()) {
+                position = 0;
+                openAudio();
+                return;
+            }
+        }
     }
 
     public void pre() {
-
+        if(position>0) {
+            --position;
+            openAudio();
+            return;
+        }
+        if (playMode==REPEAT_ALL) {
+            if(position==0) {
+                position = mediaItems.size()-1;
+                openAudio();
+                return;
+            }
+        }
     }
 
     public int getPlaymode() {
-        return 0;
+        return playMode;
     }
 
     public void setPlaymode(int playmode) {
+        playMode=playmode;
+        mediaPlayLoop();
+        CacheUtils.putInt(service,"AudioPlayMode","playmode",playmode);
+    }
 
+    private void mediaPlayLoop() {
+        if(playMode==REPEAT_SINGLE){
+            mediaplayer.setLooping(true);
+        }else {
+            mediaplayer.setLooping(false);
+        }
     }
 
     public int getCurrentPosition() {

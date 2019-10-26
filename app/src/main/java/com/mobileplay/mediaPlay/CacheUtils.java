@@ -13,6 +13,17 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public class CacheUtils {
+    public static void putInt(Context context,String SharedPreferencesName,String key,int value){
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SharedPreferencesName, Context.MODE_PRIVATE);
+        sharedPreferences.edit().putInt(key,value).commit();
+    }
+    public static int getInt(Context context,String SharedPreferencesName,String key){
+        SharedPreferences sharedPreferences = context.getSharedPreferences(SharedPreferencesName, Context.MODE_PRIVATE);
+        if(sharedPreferences==null){
+            return 0;
+        }
+        return sharedPreferences.getInt(key,0);
+    }
     public static void putString(Context context,String key,String value){
         SharedPreferences netVideo = context.getSharedPreferences("NetVideo", Context.MODE_PRIVATE);
         netVideo.edit().putString(key,value);

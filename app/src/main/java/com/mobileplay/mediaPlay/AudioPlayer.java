@@ -21,10 +21,9 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
-
 import com.mobileplay.R;
 import com.mobileplay.aidl.AudioMediaController;
+import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.IMusicService;
 import com.mobileplay.doamain.MediaItem;
 
@@ -34,6 +33,8 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import androidx.annotation.Nullable;
 
 public class AudioPlayer extends Activity implements View.OnClickListener {
     private final String MEDIA_LIST = "AudioList";
@@ -259,6 +260,8 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         tv_artist.setText(audioMediaController.getArtist());
         tv_audio_name.setText(audioMediaController.getName());
         initSeekBar();
+        btn_play_start_pause.setBackgroundResource(R.drawable.btn_play_pause_selector);
+        getPlaymode();
         handler.sendEmptyMessage(MEDIA_PREPARED_TIMER);
     }
 
@@ -283,10 +286,10 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_audio_playmode:
-                audioMediaController.mediaplayer.pause();
+                setPlaymode();
                 break;
             case R.id.btn_pre:
-
+                audioMediaController.pre();
                 break;
             case R.id.btn_play_start_pause:
                 if (audioMediaController.startAndPause()) {
@@ -296,12 +299,47 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
                 }
                 break;
             case R.id.btn_next:
-
+                audioMediaController.next();
                 break;
             case R.id.btn_lyrics:
 
                 break;
         }
     }
-
+    public void getPlaymode() {
+        int playmode = audioMediaController.getPlaymode();
+        switch (playmode){
+            case AudioMediaController.REPEAT_NORMAL:
+                btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_normal_selector);
+                break;
+            case AudioMediaController.REPEAT_SINGLE:
+                btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_single_selector);
+                break;
+            case AudioMediaController.REPEAT_ALL:
+                btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_all_selector);
+                break;
+        }
+        audioMediaController.setPlaymode(playmode);
+    }
+    public void setPlaymode() {
+        int playmode = audioMediaController.getPlaymode();
+        switch (playmode){
+            case AudioMediaController.REPEAT_NORMAL:
+                playmode=AudioMediaController.REPEAT_SINGLE;
+                CommonUtils.showToastMsg(this,"单曲循环");
+                btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_single_selector);
+                break;
+            case AudioMediaController.REPEAT_SINGLE:
+                playmode=AudioMediaController.REPEAT_ALL;
+                CommonUtils.showToastMsg(this,"全部循环");
+                btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_all_selector);
+                break;
+            case AudioMediaController.REPEAT_ALL:
+                playmode=AudioMediaController.REPEAT_NORMAL;
+                CommonUtils.showToastMsg(this,"顺序播放");
+                btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_normal_selector);
+                break;
+        }
+        audioMediaController.setPlaymode(playmode);
+    }
 }
