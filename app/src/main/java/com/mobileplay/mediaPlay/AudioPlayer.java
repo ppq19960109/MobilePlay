@@ -21,6 +21,8 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+
 import com.mobileplay.R;
 import com.mobileplay.aidl.AudioMediaController;
 import com.mobileplay.doamain.IMusicService;
@@ -32,8 +34,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-
-import androidx.annotation.Nullable;
 
 public class AudioPlayer extends Activity implements View.OnClickListener {
     private final String MEDIA_LIST = "AudioList";
@@ -59,10 +59,11 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     private int mediaDuration;
     private int currentMediaPosition;
 
-    private AudioBroadcastReceiver audioBroadcastReceiver=new AudioBroadcastReceiver();
+    private AudioBroadcastReceiver audioBroadcastReceiver;
 
     private Handler handler = new mHandler(this);
     private final int MEDIA_PREPARED_TIMER = 1;
+    private boolean notification;
 
 
     public static class mHandler extends Handler {
@@ -92,7 +93,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         }
     }
 
-    class AudioBroadcastReceiver extends BroadcastReceiver{
+    public class AudioBroadcastReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -135,6 +136,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
             unbindService(serviceConnection);
         }
         unregisterReceiver(audioBroadcastReceiver);
+        handler.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
 
@@ -187,13 +189,13 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     private void initData() {
         AnimationDrawable animationDrawable = (AnimationDrawable) iv_icon.getDrawable();
         animationDrawable.start();
-
-        bindService();
-        initMediaPlay();
         registerReceiver();
+        initMediaPlay();
+        bindService();
     }
 
     private void registerReceiver() {
+        audioBroadcastReceiver=new AudioBroadcastReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("AudioPlayer");
         registerReceiver(audioBroadcastReceiver,intentFilter);
@@ -224,13 +226,17 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         } else {
             uri = getIntent().getData();
         }
-
+        notification = getIntent().getBooleanExtra("Notification", false);
     }
 
     private void initMusicService() {
         try {
             if (musicService != null) {
                 audioMediaController = musicService.getAudioMediaController();
+//                if(notification){
+//                    audioMediaController.sendBroadcastToActivity();
+//                    return;
+//                }
                 if (audioMediaController.getMediaItems() == null) {
                     audioMediaController.setMediaItems(mediaItems);
                 }

@@ -1,40 +1,59 @@
 package com.mobileplay.aidl;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
+import com.mobileplay.R;
 import com.mobileplay.doamain.MediaItem;
+import com.mobileplay.mediaPlay.AudioPlayer;
+import com.mobileplay.pager.AudioPager;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+
+import static android.content.Context.NOTIFICATION_SERVICE;
+
+
 
 public class AudioMediaController implements Parcelable {
     private Service service;
     public List<MediaItem> mediaItems;
     public MediaItem mediaItem;
     private int position;
-    private int currentPosition=-1;
+    private int currentPosition = -1;
     public MediaPlayer mediaplayer;
 
     private OnPreparedListener mOnPrepared;
 
-    public void setOnPreparedListener(OnPreparedListener OnPrepared){
-        this.mOnPrepared=OnPrepared;
+    public void setOnPreparedListener(OnPreparedListener OnPrepared) {
+        this.mOnPrepared = OnPrepared;
     }
 
     public AudioMediaController(Service service) {
-        this.service=service;
+        this.service = service;
     }
-    public void close(){
+
+    public void close() {
         if (mediaplayer != null) {
             mediaplayer.reset();
             mediaplayer.release();
             mediaplayer = null;
         }
+        cancelNoification();
     }
+
     public List<MediaItem> getMediaItems() {
         return mediaItems;
     }
@@ -50,11 +69,13 @@ public class AudioMediaController implements Parcelable {
     public void setPosition(int position) {
         this.position = position;
     }
+
     public void openAudio() {
-        if(currentPosition==position){
+        if (currentPosition == position) {
+            sendBroadcastToActivity();
             return;
         }
-        mediaItem=mediaItems.get(position);
+        mediaItem = mediaItems.get(position);
         if (mediaplayer != null) {
             mediaplayer.reset();
 //            mediaplayer.release();
@@ -65,11 +86,12 @@ public class AudioMediaController implements Parcelable {
             mediaplayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
-                    if(mOnPrepared!=null){
+                    currentPosition = position;
+                    if (mOnPrepared != null) {
                         mOnPrepared.OnPrepared();
                     }
                     sendBroadcastToActivity();
-                    mediaplayer.start();
+                    startAndPause();
                 }
             });
             mediaplayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
@@ -94,30 +116,94 @@ public class AudioMediaController implements Parcelable {
                 e.printStackTrace();
             }
             mediaplayer.prepareAsync();
-            currentPosition=position;
+
         }
+
     }
 
-    private void sendBroadcastToActivity() {
+    public void sendBroadcastToActivity() {
         Intent intent = new Intent();
         intent.setAction("AudioPlayer");
 //        intent.setComponent(new ComponentName("com.mobileplay.mediaPlay","com.mobileplay.mediaPlay.AudioBroadcastReceiver"));
         service.sendBroadcast(intent);
     }
+    public void cancelNoification() {
+        NotificationManager manager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
+        manager.cancel(10);
+    }
+    public void sendNoification() {
+        NotificationManager manager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
+
+        Intent intent = new Intent(service, AudioPlayer.class);
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(AudioPager.MEDIA_LIST, (ArrayList<MediaItem>)mediaItems);
+        intent.putExtras(bundle);
+        intent.putExtra(AudioPager.MEDIA_POSITION, position);
+        intent.putExtra("Notification", true);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(service, 11,
+                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification.Builder builder = new Notification.Builder(service)
+
+                .setSmallIcon(R.drawable.notification_music_playing)
+                .setWhen(System.currentTimeMillis())
+                .setTicker("321音乐提示")
+                .setContentTitle("321音乐")
+                .setContentText("正在播放："+getName())
+                .setContentIntent(pendingIntent)
+                .setDefaults(Notification.DEFAULT_LIGHTS);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            builder.setShowWhen(true);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel notificationChannel = new NotificationChannel("com.mobileplay.aidl", "AudioMediaController",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            // 设置渠道描述
+            notificationChannel.setDescription("测试通知组");
+            // 是否绕过请勿打扰模式
+            notificationChannel.canBypassDnd();
+            // 设置绕过请勿打扰模式
+            notificationChannel.setBypassDnd(true);
+            // 桌面Launcher的消息角标
+            notificationChannel.canShowBadge();
+            // 设置显示桌面Launcher的消息角标
+            notificationChannel.setShowBadge(true);
+            // 设置通知出现时声音，默认通知是有声音的
+            notificationChannel.setSound(null, null);
+            // 设置通知出现时的闪灯（如果 android 设备支持的话）
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.RED);
+            // 设置通知出现时的震动（如果 android 设备支持的话）
+            notificationChannel.enableVibration(true);
+            notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400,
+                    300, 200, 400});
+
+            manager.createNotificationChannel(notificationChannel);
+            builder .setChannelId("com.mobileplay.aidl");
+
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            Notification build = builder.build();
+            build.flags=Notification.FLAG_SHOW_LIGHTS;
+            manager.notify(10, build);
+            Log.i("TAG", "sendNoification: ");
+        }
+
+    }
 
     public boolean startAndPause() {
-          if(mediaplayer.isPlaying()){
-              mediaplayer.pause();
-              return false;
-          }else {
-              mediaplayer.start();
-              return true;
-          }
+        if (mediaplayer.isPlaying()) {
+            mediaplayer.pause();
+            cancelNoification();
+            return false;
+        } else {
+            mediaplayer.start();
+            sendNoification();
+            return true;
+        }
     }
 
-    public void pause() {
-
-    }
 
     public void next() {
 
@@ -136,14 +222,14 @@ public class AudioMediaController implements Parcelable {
     }
 
     public int getCurrentPosition() {
-        if(mediaplayer!=null){
+        if (mediaplayer != null) {
             return mediaplayer.getCurrentPosition();
         }
         return 0;
     }
 
     public int getDuration() {
-        if(mediaplayer!=null) {
+        if (mediaplayer != null) {
             return mediaplayer.getDuration();
         }
         return 0;
@@ -158,7 +244,7 @@ public class AudioMediaController implements Parcelable {
     }
 
     public void seekTo(int seekto) {
-         mediaplayer.seekTo(seekto);
+        mediaplayer.seekTo(seekto);
     }
 
     public boolean isPlaying() {
@@ -204,7 +290,8 @@ public class AudioMediaController implements Parcelable {
     };
 
     public static class OnPreparedListener implements Parcelable {
-        public void OnPrepared(){}
+        public void OnPrepared() {
+        }
 
         @Override
         public int describeContents() {
