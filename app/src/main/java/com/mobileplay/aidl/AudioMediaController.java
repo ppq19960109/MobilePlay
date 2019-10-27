@@ -20,6 +20,8 @@ import com.mobileplay.mediaPlay.AudioPlayer;
 import com.mobileplay.mediaPlay.CacheUtils;
 import com.mobileplay.pager.AudioPager;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -142,14 +144,16 @@ public class AudioMediaController implements Parcelable {
     }
 
     public void sendBroadcastToActivity() {
-        Intent intent = new Intent();
-        intent.setAction("AudioPlayer");
-//        intent.setComponent(new ComponentName("com.mobileplay.mediaPlay","com.mobileplay.mediaPlay.AudioBroadcastReceiver"));
-        service.sendBroadcast(intent);
+//        Intent intent = new Intent();
+//        intent.setAction("AudioPlayer");
+////        intent.setComponent(new ComponentName("com.mobileplay.mediaPlay","com.mobileplay.mediaPlay.AudioBroadcastReceiver"));
+//        service.sendBroadcast(intent);
+
+        EventBus.getDefault().post(new MediaItem());
     }
     public void cancelNoification() {
         NotificationManager manager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
-        manager.cancel(10);
+        manager.cancel(5);
     }
     public void sendNoification() {
         NotificationManager manager = (NotificationManager) service.getSystemService(NOTIFICATION_SERVICE);
@@ -163,27 +167,34 @@ public class AudioMediaController implements Parcelable {
 
         PendingIntent pendingIntent = PendingIntent.getActivity(service, 11,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        Notification.Builder builder = new Notification.Builder(service)
 
+        Notification.Builder  builder = new Notification.Builder(service)
                 .setSmallIcon(R.drawable.notification_music_playing)
                 .setWhen(System.currentTimeMillis())
                 .setTicker("321音乐提示")
                 .setContentTitle("321音乐")
                 .setContentText("正在播放："+getName())
                 .setContentIntent(pendingIntent)
-                .setDefaults(Notification.DEFAULT_LIGHTS);
+                .setDefaults(Notification.DEFAULT_LIGHTS)
+                .setVibrate(new long[]{0})
+                .setSound(null);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             builder.setShowWhen(true);
         }
+
+        String ChannelId="com.mobileplay.aidla";
+        String ChannelName="AudioMediaController";
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel notificationChannel = new NotificationChannel("com.mobileplay.aidl", "AudioMediaController",
+
+            NotificationChannel notificationChannel = new NotificationChannel(ChannelId, ChannelName,
                     NotificationManager.IMPORTANCE_DEFAULT);
             // 设置渠道描述
             notificationChannel.setDescription("test");
             // 是否绕过请勿打扰模式
-            notificationChannel.canBypassDnd();
+//            notificationChannel.canBypassDnd();
             // 设置绕过请勿打扰模式
-            notificationChannel.setBypassDnd(true);
+//            notificationChannel.setBypassDnd(true);
             // 桌面Launcher的消息角标
             notificationChannel.canShowBadge();
             // 设置显示桌面Launcher的消息角标
@@ -194,19 +205,22 @@ public class AudioMediaController implements Parcelable {
             notificationChannel.enableLights(true);
             notificationChannel.setLightColor(Color.RED);
             // 设置通知出现时的震动（如果 android 设备支持的话）
-            notificationChannel.enableVibration(true);
-            notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400,
-                    300, 200, 400});
+            notificationChannel.enableVibration(false);
+//            notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400,
+//                    300, 200, 400});
+            notificationChannel.setVibrationPattern(new long[]{0});
 
+            //先删除之前的channelId对应的消息通道.
+//            manager.deleteNotificationChannel(ChannelId);
             manager.createNotificationChannel(notificationChannel);
-            builder .setChannelId("com.mobileplay.aidl");
 
+            builder .setChannelId(ChannelId);
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             Notification build = builder.build();
             build.flags=Notification.FLAG_SHOW_LIGHTS;
-            manager.notify(10, build);
+            manager.notify(5, build);
             Log.i("TAG", "sendNoification: ");
         }
 

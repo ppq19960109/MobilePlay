@@ -22,6 +22,9 @@ public class MusicService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+//        if(!EventBus.getDefault().isRegistered(this)) {//判断是否已经注册了（避免崩溃）
+//            EventBus.getDefault().register(this); //向EventBus注册该对象，使之成为订阅者
+//        }
         Log.e("TAG", "MusicService onCreate");
         initData();
     }
@@ -29,6 +32,7 @@ public class MusicService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+//        EventBus.getDefault().unregister(this);
         Log.e("TAG", "MusicService onDestroy");
         audioMediaController.close();
     }

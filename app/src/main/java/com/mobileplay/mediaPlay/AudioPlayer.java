@@ -21,11 +21,17 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+
 import com.mobileplay.R;
 import com.mobileplay.aidl.AudioMediaController;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.IMusicService;
 import com.mobileplay.doamain.MediaItem;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -33,8 +39,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-
-import androidx.annotation.Nullable;
 
 public class AudioPlayer extends Activity implements View.OnClickListener {
     private final String MEDIA_LIST = "AudioList";
@@ -100,7 +104,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
             String action = intent.getAction();
             Log.e("TAG", "AudioBroadcastReceiver");
             if(action=="AudioPlayer"){
-                audioPlayerOnPrepared();
+                audioPlayerOnPrepared(null);
             }
         }
     }
@@ -123,6 +127,10 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_audioplayer);
+
+        if(!EventBus.getDefault().isRegistered(this)) {//判断是否已经注册了（避免崩溃）
+            EventBus.getDefault().register(this); //向EventBus注册该对象，使之成为订阅者
+        }
         initView();
         initListener();
         initData();
@@ -136,7 +144,8 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         if (serviceConnection != null) {
             unbindService(serviceConnection);
         }
-        unregisterReceiver(audioBroadcastReceiver);
+//        unregisterReceiver(audioBroadcastReceiver);
+        EventBus.getDefault().unregister(this);
         handler.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
@@ -255,8 +264,8 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
             e.printStackTrace();
         }
     }
-
-    private void audioPlayerOnPrepared() {
+    @Subscribe(sticky = false, threadMode = ThreadMode.MAIN, priority = 1)
+    public void audioPlayerOnPrepared(MediaItem mediaItem) {
         tv_artist.setText(audioMediaController.getArtist());
         tv_audio_name.setText(audioMediaController.getName());
         initSeekBar();
