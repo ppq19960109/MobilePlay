@@ -21,8 +21,6 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
-
 import com.mobileplay.R;
 import com.mobileplay.aidl.AudioMediaController;
 import com.mobileplay.common.CommonUtils;
@@ -40,7 +38,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import androidx.annotation.Nullable;
+
 public class AudioPlayer extends Activity implements View.OnClickListener {
+
     private final String MEDIA_LIST = "AudioList";
     private final String MEDIA_POSITION = "position";
 
@@ -68,7 +69,9 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
 
     private Handler handler = new mHandler(this);
     private final int MEDIA_PREPARED_TIMER = 1;
+    private static final int SHOW_LYRIC = 2;
     private boolean notification;
+    private LyricShow lyric_show;
 
 
     public static class mHandler extends Handler {
@@ -94,16 +97,20 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
                 handler.removeMessages(MEDIA_PREPARED_TIMER);
                 handler.sendEmptyMessageDelayed(MEDIA_PREPARED_TIMER, 1000);
                 break;
-
+            case SHOW_LYRIC:
+                showLyric();
+                handler.removeMessages(SHOW_LYRIC);
+                handler.sendEmptyMessage(SHOW_LYRIC);
+                break;
         }
     }
 
-    public class AudioBroadcastReceiver extends BroadcastReceiver{
+    public class AudioBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             Log.e("TAG", "AudioBroadcastReceiver");
-            if(action=="AudioPlayer"){
+            if (action == "AudioPlayer") {
                 audioPlayerOnPrepared(null);
             }
         }
@@ -128,7 +135,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_audioplayer);
 
-        if(!EventBus.getDefault().isRegistered(this)) {//判断是否已经注册了（避免崩溃）
+        if (!EventBus.getDefault().isRegistered(this)) {//判断是否已经注册了（避免崩溃）
             EventBus.getDefault().register(this); //向EventBus注册该对象，使之成为订阅者
         }
         initView();
@@ -155,19 +162,15 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         tv_artist = (TextView) findViewById(R.id.tv_artist);
         tv_audio_name = (TextView) findViewById(R.id.tv_audio_name);
         tv_time = (TextView) findViewById(R.id.tv_time);
-        tv_time.setOnClickListener(this);
         sb_audio = (SeekBar) findViewById(R.id.sb_audio);
 
         btn_audio_playmode = (Button) findViewById(R.id.btn_audio_playmode);
-        btn_audio_playmode.setOnClickListener(this);
         btn_pre = (Button) findViewById(R.id.btn_pre);
         btn_pre.setOnClickListener(this);
         btn_play_start_pause = (Button) findViewById(R.id.btn_play_start_pause);
-        btn_play_start_pause.setOnClickListener(this);
         btn_next = (Button) findViewById(R.id.btn_next);
-        btn_next.setOnClickListener(this);
         btn_lyrics = (Button) findViewById(R.id.btn_lyrics);
-        btn_lyrics.setOnClickListener(this);
+        lyric_show = (LyricShow) findViewById(R.id.lyric_show);
     }
 
     private void initListener() {
@@ -179,7 +182,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         sb_audio.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if(fromUser){
+                if (fromUser) {
                     audioMediaController.seekTo(progress);
                 }
             }
@@ -205,11 +208,12 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     }
 
     private void registerReceiver() {
-        audioBroadcastReceiver=new AudioBroadcastReceiver();
+        audioBroadcastReceiver = new AudioBroadcastReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("AudioPlayer");
-        registerReceiver(audioBroadcastReceiver,intentFilter);
+        registerReceiver(audioBroadcastReceiver, intentFilter);
     }
+
     private void bindService() {
         Intent intent = new Intent();
         intent.setPackage("com.mobileplay");
@@ -219,6 +223,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
 
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
+
     public static void stopMusicService(Context context) {
         Intent intent = new Intent();
         intent.setPackage("com.mobileplay");
@@ -226,6 +231,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
 
         context.stopService(intent);
     }
+
     private void initMediaPlay() {
         Serializable list = getIntent().getSerializableExtra(MEDIA_LIST);
         if (list != null) {
@@ -264,6 +270,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
             e.printStackTrace();
         }
     }
+
     @Subscribe(sticky = false, threadMode = ThreadMode.MAIN, priority = 1)
     public void audioPlayerOnPrepared(MediaItem mediaItem) {
         tv_artist.setText(audioMediaController.getArtist());
@@ -272,6 +279,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         btn_play_start_pause.setBackgroundResource(R.drawable.btn_play_pause_selector);
         getPlaymode();
         handler.sendEmptyMessage(MEDIA_PREPARED_TIMER);
+        handler.sendEmptyMessage(SHOW_LYRIC);
     }
 
     /**
@@ -284,11 +292,16 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     }
 
     private void setMediaProgress() {
-        currentMediaPosition = audioMediaController.getCurrentPosition();
+//        currentMediaPosition = audioMediaController.getCurrentPosition();
         sb_audio.setProgress(currentMediaPosition);
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         tv_time.setText(simpleDateFormat.format(currentMediaPosition) + "/" + simpleDateFormat.format(mediaDuration));
+    }
+
+    private void showLyric() {
+        currentMediaPosition = audioMediaController.getCurrentPosition();
+        lyric_show.setShowNextLyric(currentMediaPosition);
     }
 
     @Override
@@ -315,9 +328,10 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
                 break;
         }
     }
+
     public void getPlaymode() {
         int playmode = audioMediaController.getPlaymode();
-        switch (playmode){
+        switch (playmode) {
             case AudioMediaController.REPEAT_NORMAL:
                 btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_normal_selector);
                 break;
@@ -330,22 +344,23 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         }
         audioMediaController.setPlaymode(playmode);
     }
+
     public void setPlaymode() {
         int playmode = audioMediaController.getPlaymode();
-        switch (playmode){
+        switch (playmode) {
             case AudioMediaController.REPEAT_NORMAL:
-                playmode=AudioMediaController.REPEAT_SINGLE;
-                CommonUtils.showToastMsg(this,"单曲循环");
+                playmode = AudioMediaController.REPEAT_SINGLE;
+                CommonUtils.showToastMsg(this, "单曲循环");
                 btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_single_selector);
                 break;
             case AudioMediaController.REPEAT_SINGLE:
-                playmode=AudioMediaController.REPEAT_ALL;
-                CommonUtils.showToastMsg(this,"全部循环");
+                playmode = AudioMediaController.REPEAT_ALL;
+                CommonUtils.showToastMsg(this, "全部循环");
                 btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_all_selector);
                 break;
             case AudioMediaController.REPEAT_ALL:
-                playmode=AudioMediaController.REPEAT_NORMAL;
-                CommonUtils.showToastMsg(this,"顺序播放");
+                playmode = AudioMediaController.REPEAT_NORMAL;
+                CommonUtils.showToastMsg(this, "顺序播放");
                 btn_audio_playmode.setBackgroundResource(R.drawable.btn_audio_playmode_normal_selector);
                 break;
         }

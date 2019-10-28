@@ -4,6 +4,7 @@
     android:background="@drawable/base_bg"
     >
     <RelativeLayout
+        android:id="@+id/top"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="5dp">
@@ -40,6 +41,7 @@
     </RelativeLayout>
 
     <LinearLayout
+        android:id="@+id/bottom"
         android:orientation="vertical"
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="5dp"
@@ -106,4 +108,11 @@
         </LinearLayout>
     </LinearLayout>
 
+    <com.mobileplay.mediaPlay.LyricShow
+        android:id="@+id/lyric_show"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/top"
+        android:layout_above="@+id/bottom"
+        />
 </RelativeLayout>

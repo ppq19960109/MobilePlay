@@ -1,4 +1,4 @@
-#Sat Oct 26 09:47:07 CST 2019
-base.0=D\:\\android\\work\\MobilePlay\\vitamio-sample\\build\\intermediates\\dex\\debug\\mergeDexDebug\\out\\classes.dex
+#Sun Oct 27 20:03:19 CST 2019
+base.0=D\:\\androidwork\\MobilePlay\\vitamio-sample\\build\\intermediates\\dex\\debug\\mergeDexDebug\\out\\classes.dex
 path.0=classes.dex
 renamed.0=classes.dex
