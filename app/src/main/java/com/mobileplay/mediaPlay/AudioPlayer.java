@@ -22,6 +22,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.mobileplay.R;
+import com.mobileplay.Utils.LyricUtils;
 import com.mobileplay.aidl.AudioMediaController;
 import com.mobileplay.common.CommonUtils;
 import com.mobileplay.doamain.IMusicService;
@@ -31,6 +32,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
@@ -72,7 +74,7 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
     private static final int SHOW_LYRIC = 2;
     private boolean notification;
     private LyricShow lyric_show;
-
+    private LyricUtils lyricUtils=new LyricUtils();
 
     public static class mHandler extends Handler {
         private WeakReference<Object> mWeakReference;
@@ -278,6 +280,8 @@ public class AudioPlayer extends Activity implements View.OnClickListener {
         initSeekBar();
         btn_play_start_pause.setBackgroundResource(R.drawable.btn_play_pause_selector);
         getPlaymode();
+        lyricUtils.readLyricFile(new File("/sdcard/myvideo/G.E.M.邓紫棋 - 北京北京.lrc"));
+        lyric_show.setLyrics(lyricUtils.getLyrics());
         handler.sendEmptyMessage(MEDIA_PREPARED_TIMER);
         handler.sendEmptyMessage(SHOW_LYRIC);
     }

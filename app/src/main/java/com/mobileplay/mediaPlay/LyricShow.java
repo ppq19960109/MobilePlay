@@ -49,6 +49,14 @@ public class LyricShow extends TextView {
         super(context, attrs, defStyleAttr);
     }
 
+    /**
+     * 设置歌词列表
+     * @param lyrics
+     */
+    public void setLyrics(ArrayList<Lyric> lyrics) {
+        this.lyrics = lyrics;
+    }
+
     private void initView()
     {
         textHeight = DensityUtil.dip2px(context,30);
@@ -66,15 +74,15 @@ public class LyricShow extends TextView {
         //设置文字居中
         whitePaint.setTextAlign(Paint.Align.CENTER);
 //        添加假歌词
-        lyrics = new ArrayList<>();
-        Lyric lyric = new Lyric();
-        for (int i = 0; i < 1001; i++) {
-            lyric.setContent(i + "aaaaaaaaa" + i);
-            lyric.setSleepTime(5000 + i);
-            lyric.setTimePoint(5000 * i);
-            lyrics.add(lyric);//添加到集合中
-            lyric = new Lyric();
-        }
+//        lyrics = new ArrayList<>();
+//        Lyric lyric = new Lyric();
+//        for (int i = 0; i < 1001; i++) {
+//            lyric.setContent(i + "aaaaaaaaa" + i);
+//            lyric.setSleepTime(5000 + i);
+//            lyric.setTimePoint(5000 * i);
+//            lyrics.add(lyric);//添加到集合中
+//            lyric = new Lyric();
+//        }
     }
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
