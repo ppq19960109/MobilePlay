@@ -239,6 +239,8 @@ public class LyricUtils {
             result = min*60*1000 + second*1000 + mil*10;
         } catch (NumberFormatException e) {
             e.printStackTrace();
+        }catch (Exception e) {
+            e.printStackTrace();
         }
 
 
